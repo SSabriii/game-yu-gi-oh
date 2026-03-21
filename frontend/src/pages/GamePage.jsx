@@ -25,6 +25,7 @@ function GameBoard() {
   const [tributeNeeded, setTributeNeeded] = useState(0);
   const [tributeIndices, setTributeIndices] = useState([]);
   const [targetSlot, setTargetSlot] = useState(null);
+  const [detailCard, setDetailCard] = useState(null);
   const [attackMode, setAttackMode] = useState(false);
   const [attackerSlot, setAttackerSlot] = useState(null);
   const [localError, setLocalError] = useState(null);
@@ -125,6 +126,7 @@ function GameBoard() {
     } else {
       setSelectedHandCard(card.id);
       setSelectedHandIndex(idx);
+      setDetailCard(card); // Show detail when selecting
     }
   }
 
@@ -224,7 +226,12 @@ function GameBoard() {
     setSpellTrap(selectedHandCard, slotIdx);
     setSelectedHandCard(null);
     setSelectedHandIndex(null);
+    setDetailCard(null);
   }
+
+  const handleShowDetail = (card) => {
+    setDetailCard(card);
+  };
 
   function handleOppFieldSlotClick(slotIdx) {
     if (!attackMode || attackerSlot === null) return;
@@ -275,6 +282,29 @@ function GameBoard() {
               onClick={() => navigate('/lobby')}>
               🏠 العودة إلى الردهة
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Card Detail Modal */}
+      {detailCard && (
+        <div className="card-detail-overlay" onClick={() => setDetailCard(null)}>
+          <div className="card-detail-modal" onClick={e => e.stopPropagation()}>
+            <div className={`detail-card-visual type-${detailCard.type.toLowerCase()}`}>
+              <h3>{detailCard.name}</h3>
+              {detailCard.type === 'Monster' && (
+                <div className="detail-stats">
+                  <span>⭐ {detailCard.level}</span>
+                  <span>⚔ {detailCard.atk}</span>
+                  <span>🛡 {detailCard.def}</span>
+                </div>
+              )}
+            </div>
+            <div className="detail-info">
+              <div className="detail-type">{detailCard.type === 'Monster' ? 'وحش' : detailCard.type === 'Spell' ? 'سحر' : 'فخ'}</div>
+              <p className="detail-effect">{detailCard.effect || 'لا يوجد تأثير خاص.'}</p>
+              <button className="btn btn-gold btn-sm" onClick={() => setDetailCard(null)}>إغلاق</button>
+            </div>
           </div>
         </div>
       )}
@@ -338,7 +368,7 @@ function GameBoard() {
                   className={`field-slot ${monster ? 'has-monster' : ''}`}
                 >
                   {monster ? (
-                    <FieldMonsterCard monster={monster} isOpponent />
+                    <FieldMonsterCard monster={monster} isOpponent onShowDetail={handleShowDetail} />
                   ) : (
                     <span className="field-slot-number">{idx + 1}</span>
                   )}
@@ -372,11 +402,11 @@ function GameBoard() {
               {myState.spellTrapField.map((card, idx) => (
                 <div
                   key={idx}
-                  className={`field-slot st-slot ${card ? 'has-card' : ''}`}
+                  className={`field-slot st-slot ${card ? 'has-card' : 'empty-player'}`}
                   onClick={() => handleMySTSlotClick(idx)}
                 >
                   {card ? (
-                    <div className={`st-card type-${card.type.toLowerCase()}`}>
+                    <div className={`st-card type-${card.type.toLowerCase()}`} onClick={(e) => { e.stopPropagation(); handleShowDetail(card); }}>
                       <div className="st-name">{card.name}</div>
                     </div>
                   ) : (
@@ -398,6 +428,7 @@ function GameBoard() {
                       monster={monster}
                       canAttack={inBattlePhase && !monster.justSummoned && !myState.attackedThisTurn}
                       isSelected={attackMode && attackerSlot === idx}
+                      onShowDetail={handleShowDetail}
                     />
                   ) : (
                     <span className="field-slot-number">
@@ -555,7 +586,7 @@ function MonsterHandCard({ card, selected, disabled, onClick }) {
   );
 }
 
-function FieldMonsterCard({ monster, isOpponent, canAttack, isSelected }) {
+function FieldMonsterCard({ monster, isOpponent, canAttack, isSelected, onShowDetail }) {
   return (
     <div
       className={`field-monster ${canAttack ? 'can-attack' : ''} ${monster.justSummoned ? 'just-summoned' : ''} ${isSelected ? 'selectable-target' : ''}`}
@@ -564,6 +595,12 @@ function FieldMonsterCard({ monster, isOpponent, canAttack, isSelected }) {
         border: `2px solid ${isSelected ? '#ff4040' : '#8b4513'}`,
         width: 80,
         height: 100,
+      }}
+      onClick={(e) => {
+        if (onShowDetail) {
+          e.stopPropagation();
+          onShowDetail(monster);
+        }
       }}
     >
       {monster.justSummoned && <div className="just-summoned-badge">جديد</div>}
