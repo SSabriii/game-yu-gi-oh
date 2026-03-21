@@ -951,7 +951,6 @@ h1, h2, h3 { font-family: 'Cinzel', serif; }
 @media (max-width: 600px) {
   html, body, #root {
     height: 100%;
-    overflow: hidden;
     touch-action: manipulation;
   }
   
