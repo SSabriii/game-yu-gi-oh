@@ -955,11 +955,13 @@ h1, h2, h3 { font-family: 'Cinzel', serif; }
   }
   
   .game-page {
-    height: 100vh;
-    height: 100dvh;
-    overflow: hidden;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
+    -webkit-overflow-scrolling: touch;
   }
   
   /* Top bar compact */
