@@ -82,7 +82,7 @@ wss.on('connection', (ws, req) => {
     token = urlParams.get('token');
     roomId = urlParams.get('roomId');
   } catch {
-    ws.close(1008, 'Bad request');
+    ws.close(1008, 'طلب غير صالح');
     return;
   }
 
@@ -91,14 +91,14 @@ wss.on('connection', (ws, req) => {
   try {
     user = jwt.verify(token, JWT_SECRET);
   } catch {
-    ws.close(1008, 'Unauthorized');
+    ws.close(1008, 'غير مصرح');
     return;
   }
 
   // Validate room
   const room = rooms.get(roomId?.toUpperCase());
   if (!room) {
-    ws.close(1008, 'Room not found');
+    ws.close(1008, 'الغرفة غير موجودة');
     return;
   }
 
@@ -107,7 +107,7 @@ wss.on('connection', (ws, req) => {
   if (room.player1 === user.username) playerKey = 'player1';
   else if (room.player2 === user.username) playerKey = 'player2';
   else {
-    ws.close(1008, 'You are not in this room');
+    ws.close(1008, 'أنت لست في هذه الغرفة');
     return;
   }
 
@@ -131,7 +131,7 @@ wss.on('connection', (ws, req) => {
     // Reconnecting — send current state
     ws.send(JSON.stringify({ type: 'game_state', state: gameStates.get(roomId) }));
   } else {
-    ws.send(JSON.stringify({ type: 'waiting', message: 'Waiting for opponent to join...' }));
+    ws.send(JSON.stringify({ type: 'waiting', message: 'في انتظار انضمام الخصم...' }));
   }
 
   ws.on('message', (raw) => {
@@ -139,7 +139,7 @@ wss.on('connection', (ws, req) => {
     try {
       msg = JSON.parse(raw);
     } catch {
-      return sendError(ws, 'Invalid message format.');
+      return sendError(ws, 'صيغة رسالة غير صالحة.');
     }
 
     const info = wsInfo.get(ws);
@@ -147,8 +147,8 @@ wss.on('connection', (ws, req) => {
     const { roomId, playerKey } = info;
     const state = gameStates.get(roomId);
 
-    if (!state) return sendError(ws, 'Game not started yet.');
-    if (state.winner) return sendError(ws, 'Game already over.');
+    if (!state) return sendError(ws, 'اللعبة لم تبدأ بعد.');
+    if (state.winner) return sendError(ws, 'انتهت اللعبة بالفعل.');
 
     let result;
 
@@ -178,7 +178,7 @@ wss.on('connection', (ws, req) => {
         break;
 
       default:
-        return sendError(ws, `Unknown event type: ${msg.type}`);
+        return sendError(ws, `نوع حدث غير معروف: ${msg.type}`);
     }
 
     if (result && result.error) {

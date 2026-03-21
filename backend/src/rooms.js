@@ -12,14 +12,14 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 function authMiddleware(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized.' });
+    return res.status(401).json({ error: 'غير مصرح.' });
   }
   try {
     const payload = jwt.verify(auth.slice(7), JWT_SECRET);
     req.user = payload;
     next();
   } catch {
-    res.status(401).json({ error: 'Invalid token.' });
+    res.status(401).json({ error: 'رمز غير صالح.' });
   }
 }
 
@@ -39,16 +39,16 @@ router.post('/', authMiddleware, (req, res) => {
 router.post('/:id/join', authMiddleware, (req, res) => {
   const room = rooms.get(req.params.id.toUpperCase());
   if (!room) {
-    return res.status(404).json({ error: 'Room not found.' });
+    return res.status(404).json({ error: 'الغرفة غير موجودة.' });
   }
   if (room.player2) {
     // Allow rejoining if same player
     if (room.player1 === req.user.username) return res.json({ roomId: room.roomId, player: 'player1' });
     if (room.player2 === req.user.username) return res.json({ roomId: room.roomId, player: 'player2' });
-    return res.status(409).json({ error: 'Room is full.' });
+    return res.status(409).json({ error: 'الغرفة ممتلئة.' });
   }
   if (room.player1 === req.user.username) {
-    return res.status(400).json({ error: 'You cannot join your own room as player 2.' });
+    return res.status(400).json({ error: 'لا يمكنك الانضمام إلى غرفتك الخاصة كلاعب ثاني.' });
   }
   room.player2 = req.user.username;
   res.json({ roomId: room.roomId, player: 'player2' });
@@ -57,7 +57,7 @@ router.post('/:id/join', authMiddleware, (req, res) => {
 // Get room info
 router.get('/:id', authMiddleware, (req, res) => {
   const room = rooms.get(req.params.id.toUpperCase());
-  if (!room) return res.status(404).json({ error: 'Room not found.' });
+  if (!room) return res.status(404).json({ error: 'الغرفة غير موجودة.' });
   res.json(room);
 });
 

@@ -129,11 +129,11 @@ function GameBoard() {
     if (inBattlePhase && !attackMode && myState.field[slotIdx]) {
       const monster = myState.field[slotIdx];
       if (monster.justSummoned) {
-        triggerLocalError("This monster was just summoned and cannot attack yet!");
+        triggerLocalError("تم استدعاء هذا الوحش تواً ولا يمكنه الهجوم بعد!");
         return;
       }
       if (myState.attackedThisTurn) {
-        triggerLocalError("You have already performed an attack this turn.");
+        triggerLocalError("لقد قمت بالهجوم بالفعل في هذا الدور.");
         return;
       }
       setAttackMode(true);
@@ -143,22 +143,22 @@ function GameBoard() {
 
     if (!isMyTurn) return;
     if (phase === 'draw') {
-      triggerLocalError("Click DRAW to begin your turn.");
+      triggerLocalError("انقر على 'سحب' لبدء دورك.");
       return;
     }
     
     if (selectedHandCard === null) {
-      if (canSummon) triggerLocalError("Select a card from your hand first!");
+      if (canSummon) triggerLocalError("اختر بطاقة من يدك أولاً!");
       return;
     }
 
     if (!canSummon) {
-      if (myState.summonedThisTurn) triggerLocalError("Already summoned this turn.");
+      if (myState.summonedThisTurn) triggerLocalError("لقد قمت بالاستدعاء بالفعل في هذا الدور.");
       return;
     }
 
     if (myState.field[slotIdx] !== null) {
-      triggerLocalError("This slot is occupied!");
+      triggerLocalError("هذه الفتحة مشغولة!");
       return;
     }
 

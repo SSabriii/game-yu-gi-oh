@@ -88,9 +88,9 @@ function attackMonster(state, playerKey, attackerSlot, defenderSlot) {
   const attacker = state[playerKey];
   const defender = state[opponentKey];
 
-  if (state.turn !== playerKey) return { error: 'Not your turn.' };
-  if (state.phase !== 'battle') return { error: 'Not in battle phase.' };
-  if (attacker.attackedThisTurn) return { error: 'Already attacked this turn.' };
+  if (state.turn !== playerKey) return { error: 'ليس دورك.' };
+  if (state.phase !== 'battle') return { error: 'لست في مرحلة القتال.' };
+  if (attacker.attackedThisTurn) return { error: 'لقد هاجمت بالفعل في هذا الدور.' };
 
   const attackerCard = attacker.field[attackerSlot];
   const defenderCard = defender.field[defenderSlot];
@@ -131,9 +131,9 @@ function directAttack(state, playerKey, attackerSlot) {
   const attacker = state[playerKey];
   const defender = state[opponentKey];
 
-  if (state.turn !== playerKey) return { error: 'Not your turn.' };
-  if (state.phase !== 'battle') return { error: 'Not in battle phase.' };
-  if (attacker.attackedThisTurn) return { error: 'Already attacked this turn.' };
+  if (state.turn !== playerKey) return { error: 'ليس دورك.' };
+  if (state.phase !== 'battle') return { error: 'لست في مرحلة القتال.' };
+  if (attacker.attackedThisTurn) return { error: 'لقد هاجمت بالفعل في هذا الدور.' };
 
   // Check opponent has no monsters
   const opponentHasMonsters = defender.field.some(slot => slot !== null);
