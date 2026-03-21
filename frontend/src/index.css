@@ -2,7 +2,7 @@
    DuelMasters Online — Global CSS Design System
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700&family=Cairo:wght@300;400;600;700;900&display=swap');
 
 /* ---- CSS Variables ---- */
 :root {
@@ -46,7 +46,8 @@ html, body, #root {
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Cairo', 'Inter', sans-serif;
+  direction: rtl;
   background: var(--bg-deep);
   color: var(--text-primary);
   min-height: 100vh;

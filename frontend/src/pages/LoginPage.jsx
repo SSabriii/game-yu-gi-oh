@@ -32,7 +32,7 @@ export default function LoginPage() {
       localStorage.setItem('username', data.username);
       navigate('/lobby');
     } catch {
-      setError('Cannot connect to server. Make sure the backend is running.');
+      setError('عذراً، لا يمكن الاتصال بالخادم. تأكد من أن الخادم يعمل.');
     } finally {
       setLoading(false);
     }
@@ -45,8 +45,8 @@ export default function LoginPage() {
 
       <div className="auth-container">
         <div className="auth-logo">
-          <h1>⚔ DuelMasters</h1>
-          <p>Online Card Battle Arena</p>
+          <h1>⚔ ديول ماسترز</h1>
+          <p>ساحة معركة البطاقات عبر الإنترنت</p>
         </div>
 
         <div className="auth-card">
@@ -55,13 +55,13 @@ export default function LoginPage() {
               className={`auth-tab ${tab === 'login' ? 'active' : ''}`}
               onClick={() => { setTab('login'); setError(''); }}
             >
-              Login
+              تسجيل الدخول
             </button>
             <button
               className={`auth-tab ${tab === 'register' ? 'active' : ''}`}
               onClick={() => { setTab('register'); setError(''); }}
             >
-              Register
+              إنشاء حساب
             </button>
           </div>
 
@@ -69,12 +69,12 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">Username</label>
+              <label className="form-label">اسم المستخدم</label>
               <input
                 id="username-input"
                 className="form-input"
                 type="text"
-                placeholder="Enter your username"
+                placeholder="أدخل اسم المستخدم"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 required
@@ -82,12 +82,12 @@ export default function LoginPage() {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Password</label>
+              <label className="form-label">كلمة المرور</label>
               <input
                 id="password-input"
                 className="form-input"
                 type="password"
-                placeholder="Enter your password"
+                placeholder="أدخل كلمة المرور"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
@@ -101,14 +101,14 @@ export default function LoginPage() {
               style={{ marginTop: 8, padding: '14px' }}
               disabled={loading}
             >
-              {loading ? '...' : tab === 'login' ? '⚔ Enter the Arena' : '✨ Create Account'}
+              {loading ? '...' : tab === 'login' ? '⚔ دخول الساحة' : '✨ إنشاء الحساب'}
             </button>
           </form>
 
           <p className="text-center mt-3" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
             {tab === 'login'
-              ? "Don't have an account? Click Register above."
-              : 'Already have an account? Click Login above.'}
+              ? "ليس لديك حساب؟ انقر على إنشاء حساب أعلاه."
+              : 'لديك حساب بالفعل؟ انقر على تسجيل الدخول أعلاه.'}
           </p>
         </div>
       </div>

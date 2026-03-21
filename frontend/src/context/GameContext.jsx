@@ -39,7 +39,7 @@ export function GameProvider({ roomId, playerKey, children }) {
           }
           break;
         case 'error':
-          setError(msg.message);
+          setError(msg.message); // This will come from backend eventually, but local ones below
           setTimeout(() => setError(null), 4000);
           break;
         default:
@@ -48,7 +48,7 @@ export function GameProvider({ roomId, playerKey, children }) {
     };
 
     ws.onerror = () => {
-      setError('WebSocket connection error.');
+      setError('خطأ في الاتصال (WebSocket).');
       setStatus('error');
     };
 
@@ -64,7 +64,7 @@ export function GameProvider({ roomId, playerKey, children }) {
   const sendAction = useCallback((type, payload = {}) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      setError('Not connected to server.');
+      setError('عذراً، أنت غير متصل بالخادم.');
       return;
     }
     ws.send(JSON.stringify({ type, ...payload }));

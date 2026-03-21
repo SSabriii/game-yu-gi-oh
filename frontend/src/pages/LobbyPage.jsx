@@ -28,7 +28,7 @@ export default function LobbyPage() {
       if (!res.ok) { setCreateError(data.error); return; }
       setCreatedRoomId(data.roomId);
     } catch {
-      setCreateError('Cannot connect to server.');
+      setCreateError('عذراً، لا يمكن الاتصال بالخادم.');
     } finally {
       setCreateLoading(false);
     }
@@ -48,7 +48,7 @@ export default function LobbyPage() {
       if (!res.ok) { setJoinError(data.error); return; }
       navigate(`/game/${data.roomId}/player2`);
     } catch {
-      setJoinError('Cannot connect to server.');
+      setJoinError('عذراً، لا يمكن الاتصال بالخادم.');
     } finally {
       setJoinLoading(false);
     }
@@ -69,31 +69,53 @@ export default function LobbyPage() {
     navigate('/login');
   }
 
+  const translations = {
+    navLogo: '⚔ ديول ماسترز أونلاين',
+    loggedInAs: 'تم تسجيل الدخول باسم',
+    logout: 'تسجيل الخروج',
+    lobbyHeader: '⚑ ردهة اللعبة',
+    lobbySub: 'قم بإنشاء مبارزة، أو انضم إلى غرف موجودة باستخدام معرف الغرفة',
+    createTitle: '🗡 إنشاء مبارزة',
+    createSub: 'استضف غرفة ألعاب وشارك معرف الغرفة مع خصمك لبدء المبارزة.',
+    createBtn: '⚔ إنشاء غرفة',
+    creatingBtn: 'جاري الإنشاء...',
+    shareId: 'شارك معرف الغرفة هذا مع خصمك!',
+    roomIdLabel: '🔑 معرف الغرفة',
+    copySuccess: '(تم النسخ!)',
+    copyHint: '(انقر للنسخ)',
+    enterRoom: '🚪 دخول الغرفة وانتظار الخصم',
+    joinTitle: '🛡 انضمام إلى مبارزة',
+    joinSub: 'أدخل معرف الغرفة الذي قدمه خصمك للانضمام إلى غرفة اللعبة الخاصة به.',
+    joinBtn: '⚔ انضمام إلى الغرفة',
+    joiningBtn: 'جاري الانضمام...',
+    enterRoomId: 'أدخل معرف الغرفة.'
+  };
+
   return (
     <div className="lobby-page">
       {/* Nav */}
       <div className="nav-bar" style={{ marginBottom: 40 }}>
-        <div className="nav-logo">⚔ DuelMasters Online</div>
+        <div className="nav-logo">{translations.navLogo}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Logged in as <span className="text-gold" style={{ fontWeight: 700 }}>{username}</span>
+            {translations.loggedInAs} <span className="text-gold" style={{ fontWeight: 700 }}>{username}</span>
           </span>
-          <button id="logout-btn" className="btn btn-outline btn-sm" onClick={handleLogout}>Logout</button>
+          <button id="logout-btn" className="btn btn-outline btn-sm" onClick={handleLogout}>{translations.logout}</button>
         </div>
       </div>
 
       <div className="lobby-header">
-        <h1>⚑ Game Lobby</h1>
+        <h1>{translations.lobbyHeader}</h1>
         <p style={{ color: 'var(--text-secondary)', marginTop: 12 }}>
-          Create a room to duel, or join an existing one with a Room ID
+          {translations.lobbySub}
         </p>
       </div>
 
       <div className="lobby-actions">
         {/* Create Room Card */}
         <div className="lobby-action-card">
-          <h2>🗡 Create a Duel</h2>
-          <p>Host a game room and share the Room ID with your opponent to begin the duel.</p>
+          <h2>{translations.createTitle}</h2>
+          <p>{translations.createSub}</p>
 
           {createError && <div className="alert alert-error">{createError}</div>}
 
@@ -105,20 +127,20 @@ export default function LobbyPage() {
               disabled={createLoading}
               style={{ padding: '14px' }}
             >
-              {createLoading ? 'Creating...' : '⚔ Create Room'}
+              {createLoading ? translations.creatingBtn : translations.createBtn}
             </button>
           ) : (
             <>
               <div className="alert alert-info">
-                Share this Room ID with your opponent!
+                {translations.shareId}
               </div>
               <div
                 id="room-id-display"
                 className="room-id-display"
                 onClick={handleCopyRoomId}
-                title="Click to copy"
+                title={translations.copyHint}
               >
-                <div className="room-id-label">🔑 Room ID {copied ? '(Copied!)' : '(Click to copy)'}</div>
+                <div className="room-id-label">{translations.roomIdLabel} {copied ? translations.copySuccess : translations.copyHint}</div>
                 <div className="room-id-value">{createdRoomId}</div>
               </div>
               <button
@@ -127,7 +149,7 @@ export default function LobbyPage() {
                 onClick={handleEnterRoom}
                 style={{ padding: '14px' }}
               >
-                🚪 Enter Room & Wait for Opponent
+                {translations.enterRoom}
               </button>
             </>
           )}
@@ -135,18 +157,18 @@ export default function LobbyPage() {
 
         {/* Join Room Card */}
         <div className="lobby-action-card">
-          <h2>🛡 Join a Duel</h2>
-          <p>Enter the Room ID provided by your opponent to join their game room.</p>
+          <h2>{translations.joinTitle}</h2>
+          <p>{translations.joinSub}</p>
 
           {joinError && <div className="alert alert-error">{joinError}</div>}
 
           <div className="form-group">
-            <label className="form-label">Room ID</label>
+            <label className="form-label">{translations.roomIdLabel}</label>
             <input
               id="join-room-input"
               className="form-input"
               type="text"
-              placeholder="e.g. A1B2C3D4"
+              placeholder="مثلاً A1B2C3D4"
               value={joinRoomId}
               onChange={e => setJoinRoomId(e.target.value.toUpperCase())}
               onKeyDown={e => e.key === 'Enter' && handleJoinRoom()}
@@ -162,7 +184,7 @@ export default function LobbyPage() {
             disabled={joinLoading}
             style={{ padding: '14px' }}
           >
-            {joinLoading ? 'Joining...' : '⚔ Join Room'}
+            {joinLoading ? translations.joiningBtn : translations.joinBtn}
           </button>
         </div>
       </div>

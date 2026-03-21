@@ -47,14 +47,14 @@ function createGameState(roomId, player1Username, player2Username) {
 function drawCard(state, playerKey) {
   const player = state[playerKey];
   if (player.deck.length === 0) {
-    return { error: 'No cards left in deck!' };
+    return { error: 'لا يوجد المزيد من البطاقات في المجموعة!' };
   }
   if (state.phase !== 'draw') {
-    return { error: 'Not in draw phase.' };
+    return { error: 'لست في مرحلة السحب.' };
   }
   const card = player.deck.shift();
   player.hand.push(card);
-  state.log.push(`${player.username} drew ${card.name}.`);
+  state.log.push(`${player.username} سحب ${card.name}.`);
   state.phase = 'main';
   return { success: true };
 }
@@ -64,19 +64,19 @@ function drawCard(state, playerKey) {
  */
 function summonMonster(state, playerKey, cardId, slotIndex) {
   const player = state[playerKey];
-  if (state.turn !== playerKey) return { error: 'Not your turn.' };
-  if (state.phase !== 'main') return { error: 'Can only summon in main phase.' };
-  if (player.summonedThisTurn) return { error: 'Already summoned a monster this turn.' };
-  if (slotIndex < 0 || slotIndex >= FIELD_SLOTS) return { error: 'Invalid slot.' };
-  if (player.field[slotIndex] !== null) return { error: 'Slot is already occupied.' };
+  if (state.turn !== playerKey) return { error: 'ليس دورك.' };
+  if (state.phase !== 'main') return { error: 'يمكنك الاستدعاء فقط في المرحلة الرئيسية.' };
+  if (player.summonedThisTurn) return { error: 'لقد استدعيت وحشاً بالفعل في هذا الدور.' };
+  if (slotIndex < 0 || slotIndex >= FIELD_SLOTS) return { error: 'فتحة غير صالحة.' };
+  if (player.field[slotIndex] !== null) return { error: 'الفتحة مشغولة بالفعل.' };
 
   const cardIndex = player.hand.findIndex(c => c.id === cardId);
-  if (cardIndex === -1) return { error: 'Card not in hand.' };
+  if (cardIndex === -1) return { error: 'البطاقة ليست في اليد.' };
 
   const card = player.hand.splice(cardIndex, 1)[0];
   player.field[slotIndex] = { ...card, justSummoned: true };
   player.summonedThisTurn = true;
-  state.log.push(`${player.username} summoned ${card.name} (ATK: ${card.atk}) to slot ${slotIndex + 1}.`);
+  state.log.push(`${player.username} استدعى ${card.name} (هجوم: ${card.atk}) في الفتحة ${slotIndex + 1}.`);
   return { success: true };
 }
 
@@ -95,9 +95,9 @@ function attackMonster(state, playerKey, attackerSlot, defenderSlot) {
   const attackerCard = attacker.field[attackerSlot];
   const defenderCard = defender.field[defenderSlot];
 
-  if (!attackerCard) return { error: 'No monster in attacker slot.' };
-  if (!defenderCard) return { error: 'No monster in defender slot.' };
-  if (attackerCard.justSummoned) return { error: 'This monster was just summoned and cannot attack.' };
+  if (!attackerCard) return { error: 'لا يوجد وحش في فتحة المهاجم.' };
+  if (!defenderCard) return { error: 'لا يوجد وحش في فتحة المدافع.' };
+  if (attackerCard.justSummoned) return { error: 'هذا الوحش تم استدعاؤه تواً ولا يمكنه الهجوم.' };
 
   const diff = attackerCard.atk - defenderCard.atk;
 
@@ -105,17 +105,17 @@ function attackMonster(state, playerKey, attackerSlot, defenderSlot) {
     // Attacker wins
     defender.lp -= diff;
     defender.field[defenderSlot] = null;
-    state.log.push(`${attacker.username}'s ${attackerCard.name} destroyed ${defenderCard.name}! ${defender.username} loses ${diff} LP.`);
+    state.log.push(`وحش ${attacker.username} [${attackerCard.name}] دمر [${defenderCard.name}]! فقد ${defender.username}ـ ${diff} نقطة حياة.`);
   } else if (diff < 0) {
     // Defender wins
     attacker.lp += diff; // diff is negative
     attacker.field[attackerSlot] = null;
-    state.log.push(`${attacker.username}'s ${attackerCard.name} was destroyed by ${defenderCard.name}! ${attacker.username} loses ${Math.abs(diff)} LP.`);
+    state.log.push(`وحش ${attacker.username} [${attackerCard.name}] تدمر بواسطة [${defenderCard.name}]! فقد ${attacker.username}ـ ${Math.abs(diff)} نقطة حياة.`);
   } else {
     // Tie — both destroyed
     attacker.field[attackerSlot] = null;
     defender.field[defenderSlot] = null;
-    state.log.push(`${attackerCard.name} and ${defenderCard.name} destroyed each other!`);
+    state.log.push(`دمر كل من [${attackerCard.name}] و [${defenderCard.name}] بعضهما البعض!`);
   }
 
   attacker.attackedThisTurn = true;
@@ -137,15 +137,15 @@ function directAttack(state, playerKey, attackerSlot) {
 
   // Check opponent has no monsters
   const opponentHasMonsters = defender.field.some(slot => slot !== null);
-  if (opponentHasMonsters) return { error: 'Opponent has monsters on the field. Target them instead.' };
+  if (opponentHasMonsters) return { error: 'الخصم لديه وحوش في الساحة. استهدفهم بدلاً من ذلك.' };
 
   const attackerCard = attacker.field[attackerSlot];
-  if (!attackerCard) return { error: 'No monster in attacker slot.' };
-  if (attackerCard.justSummoned) return { error: 'This monster was just summoned and cannot attack.' };
+  if (!attackerCard) return { error: 'لا يوجد وحش في فتحة المهاجم.' };
+  if (attackerCard.justSummoned) return { error: 'هذا الوحش تم استدعاؤه تواً ولا يمكنه الهجوم.' };
 
   defender.lp -= attackerCard.atk;
   attacker.attackedThisTurn = true;
-  state.log.push(`${attacker.username}'s ${attackerCard.name} attacks directly! ${defender.username} loses ${attackerCard.atk} LP.`);
+  state.log.push(`وحش ${attacker.username} [${attackerCard.name}] يهاجم مباشرة! فقد ${defender.username}ـ ${attackerCard.atk} نقطة حياة.`);
 
   checkWin(state);
   return { success: true };
@@ -155,10 +155,10 @@ function directAttack(state, playerKey, attackerSlot) {
  * Advance to battle phase (from main).
  */
 function goToBattlePhase(state, playerKey) {
-  if (state.turn !== playerKey) return { error: 'Not your turn.' };
-  if (state.phase !== 'main') return { error: 'Must be in main phase.' };
+  if (state.turn !== playerKey) return { error: 'ليس دورك.' };
+  if (state.phase !== 'main') return { error: 'يجب أن تكون في المرحلة الرئيسية.' };
   state.phase = 'battle';
-  state.log.push(`${state[playerKey].username} enters battle phase.`);
+  state.log.push(`${state[playerKey].username} يدخل مرحلة القتال.`);
   return { success: true };
 }
 
@@ -166,8 +166,8 @@ function goToBattlePhase(state, playerKey) {
  * End the current player's turn.
  */
 function endTurn(state, playerKey) {
-  if (state.turn !== playerKey) return { error: 'Not your turn.' };
-  if (state.phase === 'draw') return { error: 'Must draw a card first.' };
+  if (state.turn !== playerKey) return { error: 'ليس دورك.' };
+  if (state.phase === 'draw') return { error: 'يجب سحب بطاقة أولاً.' };
 
   const opponentKey = playerKey === 'player1' ? 'player2' : 'player1';
 
@@ -181,7 +181,7 @@ function endTurn(state, playerKey) {
 
   state.turn = opponentKey;
   state.phase = 'draw';
-  state.log.push(`${state[opponentKey].username}'s turn begins.`);
+  state.log.push(`بدأ دور ${state[opponentKey].username}.`);
   return { success: true };
 }
 
@@ -191,13 +191,13 @@ function endTurn(state, playerKey) {
 function checkWin(state) {
   if (state.player1.lp <= 0 && state.player2.lp <= 0) {
     state.winner = 'draw';
-    state.log.push('Draw! Both players have 0 LP.');
+    state.log.push('تعادل! كلا اللاعبين لديهم 0 نقطة حياة.');
   } else if (state.player1.lp <= 0) {
     state.winner = 'player2';
-    state.log.push(`${state.player2.username} wins!`);
+    state.log.push(`انتصر ${state.player2.username}!`);
   } else if (state.player2.lp <= 0) {
     state.winner = 'player1';
-    state.log.push(`${state.player1.username} wins!`);
+    state.log.push(`انتصر ${state.player1.username}!`);
   }
 }
 

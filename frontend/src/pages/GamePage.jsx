@@ -51,7 +51,7 @@ function GameBoard() {
     return (
       <div className="waiting-screen">
         <div className="spinner" />
-        <h2>Connecting to server...</h2>
+        <h2>جاري الاتصال بالخادم...</h2>
       </div>
     );
   }
@@ -60,18 +60,18 @@ function GameBoard() {
     const roomId = gameState?.room_id || window.location.pathname.split('/')[2];
     return (
       <div className="waiting-screen">
-        <h2 style={{ fontFamily: 'Cinzel, serif', color: 'var(--gold)' }}>⚔ DuelMasters Online</h2>
+        <h2 style={{ fontFamily: 'Cairo, Cinzel, serif', color: 'var(--gold)' }}>⚔ ديول ماسترز أونلاين</h2>
         <div className="spinner" />
-        <h2>Waiting for opponent...</h2>
+        <h2>في انتظار الخصم...</h2>
         <div className="alert alert-info" style={{ maxWidth: 400 }}>
-          💡 Tip: Use <b>Incognito Mode</b> or a <b>different browser</b> to test multiplayer on the same machine!
+          💡 نصيحة: استخدم <b>وضع التصفح الخفي</b> أو <b>متصفحاً مختلفاً</b> لاختبار اللعب المتعدد على نفس الجهاز!
         </div>
         <div className="room-id-display" style={{ minWidth: 240 }}
           onClick={() => navigator.clipboard.writeText(window.location.pathname.split('/')[2]).catch(()=>{})}>
-          <div className="room-id-label">Share this Room ID</div>
+          <div className="room-id-label">شارك معرف الغرفة هذا</div>
           <div className="room-id-value">{window.location.pathname.split('/')[2]}</div>
         </div>
-        <button className="btn btn-outline" onClick={() => navigate('/lobby')}>← Back to Lobby</button>
+        <button className="btn btn-outline" onClick={() => navigate('/lobby')}>← العودة إلى الردهة</button>
       </div>
     );
   }
@@ -80,7 +80,7 @@ function GameBoard() {
     return (
       <div className="waiting-screen">
         <div className="spinner" />
-        <h2>Loading game...</h2>
+        <h2>جاري تحميل اللعبة...</h2>
       </div>
     );
   }
@@ -198,23 +198,23 @@ function GameBoard() {
           <div className="winner-card">
             {winner === 'draw' ? (
               <>
-                <h2>🤝 Draw!</h2>
-                <p>Both players have been defeated!</p>
+                <h2>🤝 تعادل!</h2>
+                <p>تمت هزيمة كلا اللاعبين!</p>
               </>
             ) : winner === playerKey ? (
               <>
-                <h2>🏆 Victory!</h2>
-                <p>You have defeated your opponent!</p>
+                <h2>🏆 انتصار!</h2>
+                <p>لقد هزمت خصمك!</p>
               </>
             ) : (
               <>
-                <h2>💀 Defeat!</h2>
-                <p>{oppUsername} has won the duel!</p>
+                <h2>💀 هزيمة!</h2>
+                <p>لقد فاز {oppUsername} بالمبارزة!</p>
               </>
             )}
             <button className="btn btn-gold" style={{ padding: '14px 40px', fontSize: '1rem' }}
               onClick={() => navigate('/lobby')}>
-              🏠 Return to Lobby
+              🏠 العودة إلى الردهة
             </button>
           </div>
         </div>
@@ -222,17 +222,17 @@ function GameBoard() {
 
       {/* Top Bar */}
       <div className="phase-banner">
-        <div className="game-title">⚔ DuelMasters Online</div>
+        <div className="game-title">⚔ ديول ماسترز أونلاين</div>
         <div className="phase-info">
           <span className={`turn-badge ${isMyTurn ? 'your-turn' : 'opponent-turn'}`}>
-            {isMyTurn ? '⚔ Your Turn' : `${oppUsername}'s Turn`}
+            {isMyTurn ? '⚔ دورك' : `دور ${oppUsername}`}
           </span>
           <span className={`phase-badge phase-${phase}`}>
-            {phase === 'draw' ? '🃏 Draw' : phase === 'main' ? '⚙ Main' : '⚡ Battle'}
+            {phase === 'draw' ? '🃏 سحب' : phase === 'main' ? '⚙ الرئيسي' : '⚡ القتال'}
           </span>
-          <div className="deck-badge">🃏 <span>{myState.deck.length}</span> left</div>
+          <div className="deck-badge">🃏 متبقي <span>{myState.deck.length}</span></div>
         </div>
-        <button className="btn btn-outline btn-sm" onClick={() => navigate('/lobby')}>← Lobby</button>
+        <button className="btn btn-outline btn-sm" onClick={() => navigate('/lobby')}>← الردهة</button>
       </div>
 
       {/* Error toast */}
@@ -256,20 +256,20 @@ function GameBoard() {
 
         {/* Opponent Hand (face-down) */}
         <div className="hand-section">
-          <div className="section-label">Opponent's Hand ({oppState.hand.length} cards)</div>
+          <div className="section-label">يد الخصم ({oppState.hand.length} بطاقات)</div>
           <div className="hand-cards" style={{ minHeight: 64 }}>
             {oppState.hand.map((_, i) => (
               <div key={i} className="monster-card back" style={{ width: 48, height: 68 }} />
             ))}
             {oppState.hand.length === 0 && (
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', alignSelf: 'center' }}>No cards</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', alignSelf: 'center' }}>لا توجد بطاقات</span>
             )}
           </div>
         </div>
 
         {/* Opponent Field */}
         <div className="field-section">
-          <div className="section-label" style={{ textAlign: 'center' }}>Opponent's Field</div>
+          <div className="section-label" style={{ textAlign: 'center' }}>ساحة الخصم</div>
           <div className="field-row">
             <div className="field-slots">
               {oppState.field.map((monster, idx) => (
@@ -327,17 +327,17 @@ function GameBoard() {
         {attackMode && (
           <div className="attack-select-banner">
             {oppHasMonsters
-              ? '⚔ Select an opponent monster to attack, or Direct Attack if open'
-              : '⚡ Opponent has no monsters — use Direct Attack!'}
+              ? '⚔ اختر وحشاً من وحوش الخصم للهجوم، أو هجوم مباشر إذا كانت الساحة خالية'
+              : '⚡ الخصم ليس لديه وحوش — استخدم الهجوم المباشر!'}
             <button className="btn btn-outline btn-sm" style={{ marginLeft: 12 }} onClick={handleCancelAttack}>
-              Cancel
+              إلغاء
             </button>
           </div>
         )}
 
         {/* My Hand */}
         <div className="hand-section">
-          <div className="section-label">Your Hand ({myState.hand.length} cards)</div>
+          <div className="section-label">يدك ({myState.hand.length} بطاقات)</div>
           <div className="hand-cards">
             {myState.hand.map((card, i) => (
               <MonsterHandCard
@@ -350,13 +350,13 @@ function GameBoard() {
             ))}
             {myState.hand.length === 0 && (
               <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', alignSelf: 'center' }}>
-                No cards in hand
+                لا توجد بطاقات في اليد
               </span>
             )}
           </div>
           {selectedHandCard !== null && canSummon && (
             <div style={{ fontSize: '0.75rem', color: 'var(--gold)', paddingLeft: 8 }}>
-              ✨ Card selected — click an empty field slot to summon
+              ✨ تم اختيار البطاقة — انقر على فتحة فارغة في الساحة للاستدعاء
             </div>
           )}
         </div>
@@ -395,7 +395,7 @@ function GameBoard() {
             onClick={drawCard}
             disabled={!canDraw}
           >
-            🃏 Draw
+            🃏 سحب
           </button>
           <button
             id="battle-btn"
@@ -403,7 +403,7 @@ function GameBoard() {
             onClick={goToBattle}
             disabled={!canGoToBattle}
           >
-            ⚔ Battle Phase
+            ⚔ مرحلة القتال
           </button>
           {attackMode && !oppHasMonsters && (
             <button
@@ -411,7 +411,7 @@ function GameBoard() {
               className="btn btn-danger"
               onClick={handleDirectAttack}
             >
-              ⚡ Direct Attack
+              ⚡ هجوم مباشر
             </button>
           )}
           <button
@@ -420,15 +420,15 @@ function GameBoard() {
             onClick={endTurn}
             disabled={!canEndTurn}
           >
-            ⏭ End Turn
+            ⏭ إنهاء الدور
           </button>
         </div>
         <div className="action-hint">
-          {!isMyTurn && `Waiting for ${oppUsername}...`}
-          {isMyTurn && phase === 'draw' && 'Draw a card to begin your turn.'}
-          {isMyTurn && phase === 'main' && !myState.summonedThisTurn && 'Select a card from your hand, then click a field slot to summon.'}
-          {isMyTurn && phase === 'main' && myState.summonedThisTurn && 'Enter Battle Phase to attack, or End Turn.'}
-          {isMyTurn && phase === 'battle' && !attackMode && 'Click a monster on your field to attack with it.'}
+          {!isMyTurn && `في انتظار ${oppUsername}...`}
+          {isMyTurn && phase === 'draw' && 'اسحب بطاقة لبدء دورك.'}
+          {isMyTurn && phase === 'main' && !myState.summonedThisTurn && 'اختر بطاقة من يدك، ثم انقر على فتحة في الساحة للاستدعاء.'}
+          {isMyTurn && phase === 'main' && myState.summonedThisTurn && 'ادخل مرحلة القتال للهجوم، أو أنهِ دورك.'}
+          {isMyTurn && phase === 'battle' && !attackMode && 'انقر على وحش في ساحتك للهجوم به.'}
         </div>
       </div>
     </div>
@@ -468,7 +468,7 @@ function FieldMonsterCard({ monster, isOpponent, canAttack, isSelected }) {
       }}
       title={`${monster.name} | ATK: ${monster.atk}`}
     >
-      {monster.justSummoned && <div className="just-summoned-badge">New</div>}
+      {monster.justSummoned && <div className="just-summoned-badge">جديد</div>}
       <div className="card-name-label">{monster.name}</div>
       <div className="card-atk-label">⚔ {monster.atk}</div>
     </div>
