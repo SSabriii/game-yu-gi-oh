@@ -104,29 +104,31 @@ function GameBoard() {
 
   function handleHandCardClick(card, idx) {
     if (!isMyTurn) {
-      triggerLocalError("It is not your turn!");
+      triggerLocalError("ليس دورك!");
       return;
     }
     if (phase === 'draw') {
-      triggerLocalError("You must Draw a card first!");
+      triggerLocalError("يجب أن تسحب بطاقة أولاً!");
       return;
     }
     if (phase === 'battle') {
-      triggerLocalError("Cannot summon during Battle Phase!");
+      triggerLocalError("لا يمكن الاستدعاء في مرحلة القتال!");
       return;
     }
-    if (myState.summonedThisTurn) {
-      triggerLocalError("Already summoned a monster this turn.");
+    // Only block Monster selection if already summoned; Spells/Traps can always be selected
+    if (card.type === 'Monster' && myState.summonedThisTurn) {
+      triggerLocalError("لقد استدعيت وحشاً بالفعل في هذا الدور.");
       return;
     }
 
     if (selectedHandCard === card.id) {
       setSelectedHandCard(null);
       setSelectedHandIndex(null);
+      setDetailCard(null);
     } else {
       setSelectedHandCard(card.id);
       setSelectedHandIndex(idx);
-      setDetailCard(card); // Show detail when selecting
+      setDetailCard(card);
     }
   }
 
@@ -545,7 +547,7 @@ function GameBoard() {
           {!isMyTurn && `في انتظار ${oppUsername}...`}
           {isMyTurn && phase === 'draw' && 'اسحب بطاقة لبدء دورك.'}
           {isMyTurn && phase === 'main' && !myState.summonedThisTurn && 'اختر بطاقة من يدك، ثم انقر على فتحة في الساحة للاستدعاء.'}
-          {isMyTurn && phase === 'main' && myState.summonedThisTurn && 'ادخل مرحلة القتال للهجوم، أو أنهِ دورك.'}
+          {isMyTurn && phase === 'main' && myState.summonedThisTurn && 'يمكنك وضع سحر/فخ، أو ادخل مرحلة القتال، أو أنهِ دورك.'}
           {isMyTurn && phase === 'battle' && !attackMode && 'انقر على وحش في ساحتك للهجوم به.'}
         </div>
       </div>
