@@ -158,7 +158,15 @@ wss.on('connection', (ws, req) => {
         break;
 
       case 'summon_monster':
-        result = summonMonster(state, playerKey, msg.cardId, msg.slotIndex);
+        result = summonMonster(state, playerKey, msg.cardId, msg.slotIndex, msg.tributeIndices || []);
+        break;
+
+      case 'set_spell_trap':
+        result = setSpellTrap(state, playerKey, msg.cardId, msg.slotIndex);
+        break;
+
+      case 'activate_spell':
+        result = activateSpell(state, playerKey, msg.cardId, msg.slotIndex);
         break;
 
       case 'go_to_battle':

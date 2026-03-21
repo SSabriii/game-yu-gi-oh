@@ -71,7 +71,9 @@ export function GameProvider({ roomId, playerKey, children }) {
   }, []);
 
   const drawCard = useCallback(() => sendAction('draw_card'), [sendAction]);
-  const summonMonster = useCallback((cardId, slotIndex) => sendAction('summon_monster', { cardId, slotIndex }), [sendAction]);
+  const summonMonster = useCallback((cardId, slotIndex, tributeIndices = []) => sendAction('summon_monster', { cardId, slotIndex, tributeIndices }), [sendAction]);
+  const setSpellTrap = useCallback((cardId, slotIndex) => sendAction('set_spell_trap', { cardId, slotIndex }), [sendAction]);
+  const activateSpell = useCallback((cardId, slotIndex) => sendAction('activate_spell', { cardId, slotIndex }), [sendAction]);
   const goToBattle = useCallback(() => sendAction('go_to_battle'), [sendAction]);
   const attackMonster = useCallback((attackerSlot, defenderSlot) => sendAction('attack_monster', { attackerSlot, defenderSlot }), [sendAction]);
   const directAttack = useCallback((attackerSlot) => sendAction('direct_attack', { attackerSlot }), [sendAction]);
@@ -87,7 +89,7 @@ export function GameProvider({ roomId, playerKey, children }) {
     <GameContext.Provider value={{
       gameState, status, error, playerKey, opponentKey,
       myState, oppState, isMyTurn, phase,
-      drawCard, summonMonster, goToBattle, attackMonster, directAttack, endTurn,
+      drawCard, summonMonster, setSpellTrap, activateSpell, goToBattle, attackMonster, directAttack, endTurn,
     }}>
       {children}
     </GameContext.Provider>

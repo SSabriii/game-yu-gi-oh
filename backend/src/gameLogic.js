@@ -2,7 +2,7 @@ const { createDeck } = require('./cards');
 
 const STARTING_LP = 8000;
 const HAND_SIZE = 5;
-const FIELD_SLOTS = 3;
+const FIELD_SLOTS = 5;
 
 /**
  * Create a fresh game state for two players in a room.
@@ -21,7 +21,9 @@ function createGameState(roomId, player1Username, player2Username) {
       lp: STARTING_LP,
       hand: hand1,
       deck: deck1,
-      field: [null, null, null],
+      field: new Array(FIELD_SLOTS).fill(null),
+      spellTrapField: new Array(FIELD_SLOTS).fill(null),
+      graveyard: [],
       summonedThisTurn: false,
       attackedThisTurn: false,
     },
@@ -30,7 +32,9 @@ function createGameState(roomId, player1Username, player2Username) {
       lp: STARTING_LP,
       hand: hand2,
       deck: deck2,
-      field: [null, null, null],
+      field: new Array(FIELD_SLOTS).fill(null),
+      spellTrapField: new Array(FIELD_SLOTS).fill(null),
+      graveyard: [],
       summonedThisTurn: false,
       attackedThisTurn: false,
     },
@@ -61,8 +65,9 @@ function drawCard(state, playerKey) {
 
 /**
  * Summon a monster from hand to a field slot.
+ * Supports Tribute Summoning (Level 5-6: 1 tribute, Level 7+: 2 tributes).
  */
-function summonMonster(state, playerKey, cardId, slotIndex) {
+function summonMonster(state, playerKey, cardId, slotIndex, tributeIndices = []) {
   const player = state[playerKey];
   if (state.turn !== playerKey) return { error: 'ليس دورك.' };
   if (state.phase !== 'main') return { error: 'يمكنك الاستدعاء فقط في المرحلة الرئيسية.' };
@@ -72,11 +77,39 @@ function summonMonster(state, playerKey, cardId, slotIndex) {
 
   const cardIndex = player.hand.findIndex(c => c.id === cardId);
   if (cardIndex === -1) return { error: 'البطاقة ليست في اليد.' };
+  const card = player.hand[cardIndex];
 
-  const card = player.hand.splice(cardIndex, 1)[0];
-  player.field[slotIndex] = { ...card, justSummoned: true };
+  if (card.type !== 'Monster') return { error: 'هذا ليس وحشاً!' };
+
+  // Tribute Logic
+  const tributesRequired = card.level >= 7 ? 2 : (card.level >= 5 ? 1 : 0);
+  if (tributesRequired > 0) {
+    if (tributeIndices.length !== tributesRequired) {
+      return { error: `هذا الوحش يحتاج إلى ${tributesRequired} أوراق تضحية.`, needsTribute: tributesRequired };
+    }
+    // Verify tributes are valid monsters on field
+    for (const idx of tributeIndices) {
+      if (!player.field[idx]) return { error: 'إحدى فتحات التضحية فارغة.' };
+    }
+    // Perform tribute
+    for (const idx of tributeIndices) {
+      const tCard = player.field[idx];
+      player.graveyard.push(tCard);
+      player.field[idx] = null;
+    }
+    state.log.push(`${player.username} ضحى بـ ${tributeIndices.length} وحوش لاستدعاء ${card.name}.`);
+  }
+
+  player.hand.splice(cardIndex, 1);
+  player.field[slotIndex] = { ...card, justSummoned: true, position: 'attack' };
   player.summonedThisTurn = true;
-  state.log.push(`${player.username} استدعى ${card.name} (هجوم: ${card.atk}) في الفتحة ${slotIndex + 1}.`);
+  state.log.push(`${player.username} استدعى ${card.name} (هجوم: ${card.atk}, دفاع: ${card.def}) في الفتحة ${slotIndex + 1}.`);
+  
+  // Basic Auto-Effects (Draw/Heal on summon)
+  if (card.effectType === 'draw_on_summon') {
+    // Note: implementing specific effects later as needed
+  }
+
   return { success: true };
 }
 
@@ -163,6 +196,93 @@ function goToBattlePhase(state, playerKey) {
 }
 
 /**
+ * Set a Spell or Trap card مقلوباً.
+ */
+function setSpellTrap(state, playerKey, cardId, slotIndex) {
+  const player = state[playerKey];
+  if (state.turn !== playerKey) return { error: 'ليس دورك.' };
+  if (state.phase !== 'main') return { error: 'المرحلة غير صالحة.' };
+  if (slotIndex < 0 || slotIndex >= FIELD_SLOTS) return { error: 'فتحة غير صالحة.' };
+  if (player.spellTrapField[slotIndex] !== null) return { error: 'الفتحة مشغولة بالفعل.' };
+
+  const cardIndex = player.hand.findIndex(c => c.id === cardId);
+  if (cardIndex === -1) return { error: 'البطاقة ليست في اليد.' };
+  const card = player.hand[cardIndex];
+
+  if (card.type === 'Monster') return { error: 'لا يمكنك وضع وحش هنا!' };
+
+  player.hand.splice(cardIndex, 1);
+  player.spellTrapField[slotIndex] = { ...card, setThisTurn: true, faceUp: false };
+  state.log.push(`${player.username} وضع بطاقة في منطقة السحر/الفخاخ.`);
+  return { success: true };
+}
+
+/**
+ * Activate a Spell card from hand or field.
+ */
+function activateSpell(state, playerKey, cardId, slotIndex = -1) {
+  const player = state[playerKey];
+  const oppKey = playerKey === 'player1' ? 'player2' : 'player1';
+  const opp = state[oppKey];
+
+  if (state.turn !== playerKey) return { error: 'ليس دورك.' };
+  if (state.phase !== 'main') return { error: 'المرحلة غير صالحة.' };
+
+  let card;
+  let fromField = false;
+
+  if (slotIndex !== -1) {
+    card = player.spellTrapField[slotIndex];
+    if (!card) return { error: 'لا توجد بطاقة هنا.' };
+    fromField = true;
+  } else {
+    const cardIndex = player.hand.findIndex(c => c.id === cardId);
+    if (cardIndex === -1) return { error: 'البطاقة ليست معك.' };
+    card = player.hand[cardIndex];
+  }
+
+  if (card.type !== 'Spell') return { error: 'هذه ليست بطاقة سحر!' };
+
+  // Execute Effect
+  switch (card.effectType) {
+    case 'heal_lp':
+      player.lp += card.value;
+      state.log.push(`${player.username} استعاد ${card.value} LP.`);
+      break;
+    case 'draw_cards':
+      for (let i = 0; i < card.value; i++) {
+        if (player.deck.length > 0) {
+          player.hand.push(player.deck.shift());
+        }
+      }
+      state.log.push(`${player.username} سحب ${card.value} بطاقات.`);
+      break;
+    case 'atk_boost_permanent':
+      // This would require selecting a monster, skipping for MVP simplicity or picking strongest
+      const strongest = player.field.filter(s => s).sort((a, b) => b.atk - a.atk)[0];
+      if (strongest) {
+        strongest.atk += card.value;
+        state.log.push(`زاد هجوم ${strongest.name} بمقدار ${card.value}.`);
+      }
+      break;
+    // Add more cases as needed
+    default:
+      state.log.push(`${player.username} فعل ${card.name}، لكن التأثير لم يكتمل بعد.`);
+  }
+
+  // Cleanup
+  if (fromField) {
+    player.graveyard.push({ ...card });
+    player.spellTrapField[slotIndex] = null;
+  } else {
+    const cardIdx = player.hand.findIndex(c => c.id === cardId);
+    player.graveyard.push(player.hand.splice(cardIdx, 1)[0]);
+  }
+
+  return { success: true };
+}
+
+/**
  * End the current player's turn.
  */
 function endTurn(state, playerKey) {
@@ -205,6 +325,8 @@ module.exports = {
   createGameState,
   drawCard,
   summonMonster,
+  setSpellTrap,
+  activateSpell,
   attackMonster,
   directAttack,
   goToBattlePhase,

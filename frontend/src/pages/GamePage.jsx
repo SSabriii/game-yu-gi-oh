@@ -16,12 +16,15 @@ function GameBoard() {
   const {
     gameState, status, error,
     myState, oppState, isMyTurn, phase, playerKey, opponentKey,
-    drawCard, summonMonster, goToBattle, attackMonster, directAttack, endTurn,
+    drawCard, summonMonster, setSpellTrap, activateSpell, goToBattle, attackMonster, directAttack, endTurn,
   } = useGame();
 
   // UI state for card/slot selection
   const [selectedHandCard, setSelectedHandCard] = useState(null); // cardId
   const [selectedHandIndex, setSelectedHandIndex] = useState(null);
+  const [tributeNeeded, setTributeNeeded] = useState(0);
+  const [tributeIndices, setTributeIndices] = useState([]);
+  const [targetSlot, setTargetSlot] = useState(null);
   const [attackMode, setAttackMode] = useState(false);
   const [attackerSlot, setAttackerSlot] = useState(null);
   const [localError, setLocalError] = useState(null);
@@ -126,6 +129,21 @@ function GameBoard() {
   }
 
   function handleMyFieldSlotClick(slotIdx) {
+    if (tributeNeeded > 0) {
+      if (myState.field[slotIdx] === null) {
+        triggerLocalError("يجب أن تختار وحشاً للتضحية!");
+        return;
+      }
+      if (tributeIndices.includes(slotIdx)) {
+        setTributeIndices(prev => prev.filter(i => i !== slotIdx));
+      } else {
+        if (tributeIndices.length < tributeNeeded) {
+          setTributeIndices(prev => [...prev, slotIdx]);
+        }
+      }
+      return;
+    }
+
     if (inBattlePhase && !attackMode && myState.field[slotIdx]) {
       const monster = myState.field[slotIdx];
       if (monster.justSummoned) {
@@ -152,6 +170,12 @@ function GameBoard() {
       return;
     }
 
+    const card = myState.hand[selectedHandIndex];
+    if (card.type !== 'Monster') {
+      triggerLocalError("هذا ليس وحشاً! ضعه في منطقة السحر/الفخاخ.");
+      return;
+    }
+
     if (!canSummon) {
       if (myState.summonedThisTurn) triggerLocalError("لقد قمت بالاستدعاء بالفعل في هذا الدور.");
       return;
@@ -162,7 +186,42 @@ function GameBoard() {
       return;
     }
 
-    summonMonster(selectedHandCard, slotIdx);
+    // Level-based tribute check
+    const tributesRequired = card.level >= 7 ? 2 : (card.level >= 5 ? 1 : 0);
+    if (tributesRequired > 0 && tributeIndices.length < tributesRequired) {
+      setTributeNeeded(tributesRequired);
+      setTargetSlot(slotIdx);
+      triggerLocalError(`هذا الوحش يحتاج إلى التضحية بـ ${tributesRequired} وحوش. اخترهم الآن.`);
+      return;
+    }
+
+    summonMonster(selectedHandCard, slotIdx, tributeIndices);
+    setSelectedHandCard(null);
+    setSelectedHandIndex(null);
+    setTributeNeeded(0);
+    setTributeIndices([]);
+    setTargetSlot(null);
+  }
+
+  function handleMySTSlotClick(slotIdx) {
+    if (!isMyTurn || phase !== 'main') return;
+    
+    const existing = myState.spellTrapField[slotIdx];
+    if (existing) {
+      if (existing.type === 'Spell') {
+        activateSpell(existing.id, slotIdx);
+      }
+      return;
+    }
+
+    if (selectedHandCard === null) return;
+    const card = myState.hand[selectedHandIndex];
+    if (card.type === 'Monster') {
+      triggerLocalError("لا يمكنك وضع وحش هنا!");
+      return;
+    }
+
+    setSpellTrap(selectedHandCard, slotIdx);
     setSelectedHandCard(null);
     setSelectedHandIndex(null);
   }
@@ -271,19 +330,29 @@ function GameBoard() {
         <div className="field-section">
           <div className="section-label" style={{ textAlign: 'center' }}>ساحة الخصم</div>
           <div className="field-row">
+            {/* Monster Slots */}
             <div className="field-slots">
               {oppState.field.map((monster, idx) => (
                 <div
                   key={idx}
-                  id={`opp-field-${idx}`}
-                  className={`field-slot ${monster ? 'has-monster' : ''} ${attackMode && monster ? 'selectable-target' : ''}`}
-                  onClick={() => handleOppFieldSlotClick(idx)}
-                  style={{ cursor: attackMode && monster ? 'crosshair' : 'default' }}
+                  className={`field-slot ${monster ? 'has-monster' : ''}`}
                 >
                   {monster ? (
                     <FieldMonsterCard monster={monster} isOpponent />
                   ) : (
                     <span className="field-slot-number">{idx + 1}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Spell/Trap Slots */}
+            <div className="field-slots spell-trap-slots">
+              {oppState.spellTrapField.map((card, idx) => (
+                <div key={idx} className={`field-slot st-slot ${card ? 'has-card' : ''}`}>
+                  {card ? (
+                    <div className="st-card back" />
+                  ) : (
+                    <span className="field-slot-number">ST</span>
                   )}
                 </div>
               ))}
@@ -296,14 +365,32 @@ function GameBoard() {
 
         {/* My Field */}
         <div className="field-section">
-          <div className="section-label" style={{ textAlign: 'center' }}>Your Field</div>
+          <div className="section-label" style={{ textAlign: 'center' }}>ساحتك</div>
           <div className="field-row">
+            {/* Spell/Trap Slots */}
+            <div className="field-slots spell-trap-slots">
+              {myState.spellTrapField.map((card, idx) => (
+                <div
+                  key={idx}
+                  className={`field-slot st-slot ${card ? 'has-card' : ''}`}
+                  onClick={() => handleMySTSlotClick(idx)}
+                >
+                  {card ? (
+                    <div className={`st-card type-${card.type.toLowerCase()}`}>
+                      <div className="st-name">{card.name}</div>
+                    </div>
+                  ) : (
+                    <span className="field-slot-number">ST</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Monster Slots */}
             <div className="field-slots">
               {myState.field.map((monster, idx) => (
                 <div
                   key={idx}
-                  id={`my-field-${idx}`}
-                  className={`field-slot ${monster ? 'has-monster' : ''} ${!monster && canSummon && selectedHandCard !== null ? 'empty-player' : ''} ${inBattlePhase && monster && !monster.justSummoned && !myState.attackedThisTurn ? 'empty-player' : ''}`}
+                  className={`field-slot ${monster ? 'has-monster' : ''} ${tributeNeeded > 0 && monster ? 'tribute-target' : ''} ${tributeIndices.includes(idx) ? 'tribute-selected' : ''}`}
                   onClick={() => handleMyFieldSlotClick(idx)}
                 >
                   {monster ? (
@@ -314,7 +401,7 @@ function GameBoard() {
                     />
                   ) : (
                     <span className="field-slot-number">
-                      {canSummon && selectedHandCard !== null ? '+' : idx + 1}
+                      {targetSlot === idx ? '🎯' : idx + 1}
                     </span>
                   )}
                 </div>
@@ -436,22 +523,34 @@ function GameBoard() {
 }
 
 function MonsterHandCard({ card, selected, disabled, onClick }) {
-  const hue = getHueFromColor(card.color);
+  const isMonster = card.type === 'Monster';
   return (
     <div
       id={`hand-card-${card.id}`}
-      className={`monster-card ${selected ? 'selected' : ''}`}
+      className={`monster-card ${selected ? 'selected' : ''} type-${card.type.toLowerCase()}`}
       style={{
-        background: `linear-gradient(160deg, ${card.color}dd 0%, ${card.color}88 60%, #0a0a20 100%)`,
-        '--card-glow': card.color + '88',
+        background: isMonster 
+          ? `linear-gradient(160deg, #8b4513dd 0%, #a0522ddd 60%, #0a0a20 100%)`
+          : card.type === 'Spell' 
+            ? `linear-gradient(160deg, #1a472add 0%, #2e8b57dd 60%, #0a0a20 100%)`
+            : `linear-gradient(160deg, #601021dd 0%, #8b0000dd 60%, #0a0a20 100%)`,
         opacity: disabled && !selected ? 0.6 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
       }}
       onClick={disabled ? undefined : onClick}
-      title={`${card.name} | ATK: ${card.atk} | ${card.type}`}
     >
       <div className="card-name-label">{card.name}</div>
-      <div className="card-atk-label">⚔ {card.atk}</div>
+      {isMonster ? (
+        <>
+          <div className="card-level-stars">{'⭐'.repeat(card.level)}</div>
+          <div className="card-stats-row">
+            <span>⚔ {card.atk}</span>
+            <span>🛡 {card.def}</span>
+          </div>
+        </>
+      ) : (
+        <div className="card-type-label">{card.type === 'Spell' ? 'سحر' : 'فخ'}</div>
+      )}
     </div>
   );
 }
@@ -461,16 +560,19 @@ function FieldMonsterCard({ monster, isOpponent, canAttack, isSelected }) {
     <div
       className={`field-monster ${canAttack ? 'can-attack' : ''} ${monster.justSummoned ? 'just-summoned' : ''} ${isSelected ? 'selectable-target' : ''}`}
       style={{
-        background: `linear-gradient(160deg, ${monster.color}dd 0%, ${monster.color}66 60%, #0a0a20 100%)`,
-        border: `2px solid ${isSelected ? '#ff4040' : monster.color}`,
-        width: 86,
-        height: 106,
+        background: `linear-gradient(160deg, #8b4513dd 0%, #a0522ddd 60%, #0a0a20 100%)`,
+        border: `2px solid ${isSelected ? '#ff4040' : '#8b4513'}`,
+        width: 80,
+        height: 100,
       }}
-      title={`${monster.name} | ATK: ${monster.atk}`}
     >
       {monster.justSummoned && <div className="just-summoned-badge">جديد</div>}
-      <div className="card-name-label">{monster.name}</div>
-      <div className="card-atk-label">⚔ {monster.atk}</div>
+      <div className="card-name-label" style={{ fontSize: '0.65rem' }}>{monster.name}</div>
+      <div className="card-stats-row" style={{ fontSize: '0.65rem', justifyContent: 'center', gap: '4px' }}>
+        <span>⚔ {monster.atk}</span>
+        <span>🛡 {monster.def}</span>
+      </div>
+      <div className="card-level-stars" style={{ fontSize: '0.6rem' }}>{'⭐'.repeat(monster.level)}</div>
     </div>
   );
 }
