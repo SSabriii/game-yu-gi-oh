@@ -1,0 +1,26 @@
+services:
+  # Backend Web Service
+  - type: web
+    name: yugioh-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+
+  # Frontend Static Site
+  - type: web
+    name: yugioh-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://yugioh-backend.onrender.com
+      - key: VITE_WS_URL
+        value: wss://yugioh-backend.onrender.com
