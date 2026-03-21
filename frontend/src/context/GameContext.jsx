@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useRef, useState, useCallback } f
 
 const GameContext = createContext(null);
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001';
+const DEFAULT_WS_URL = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host;
+const WS_URL = import.meta.env.VITE_WS_URL || DEFAULT_WS_URL;
 
 export function GameProvider({ roomId, playerKey, children }) {
   const [gameState, setGameState] = useState(null);

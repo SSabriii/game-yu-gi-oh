@@ -4,6 +4,7 @@ const http = require('http');
 const WebSocket = require('ws');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 const { URL } = require('url');
 
 const authRouter = require('./auth');
@@ -29,6 +30,19 @@ app.use(express.json());
 app.get('/health', (_, res) => res.json({ status: 'ok' }));
 app.use('/api/auth', authRouter);
 app.use('/api/rooms', roomsRouter);
+
+// ----- Serve Frontend Static Files -----
+const distPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
+app.use(express.static(distPath));
+
+// For any other GET request, serve the React app's index.html (client-side routing)
+app.get('*', (req, res, next) => {
+  // Only serve index.html if it's not an API route and it's a GET request
+  if (req.url.startsWith('/api') || req.method !== 'GET') {
+    return next();
+  }
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 
 // ----- HTTP + WebSocket server -----
 const server = http.createServer(app);
