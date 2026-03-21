@@ -13,6 +13,8 @@ const {
   createGameState,
   drawCard,
   summonMonster,
+  setSpellTrap,
+  activateSpell,
   attackMonster,
   directAttack,
   goToBattlePhase,
@@ -135,65 +137,70 @@ wss.on('connection', (ws, req) => {
   }
 
   ws.on('message', (raw) => {
-    let msg;
     try {
-      msg = JSON.parse(raw);
-    } catch {
-      return sendError(ws, 'صيغة رسالة غير صالحة.');
+      let msg;
+      try {
+        msg = JSON.parse(raw);
+      } catch {
+        return sendError(ws, 'صيغة رسالة غير صالحة.');
+      }
+
+      const info = wsInfo.get(ws);
+      if (!info) return;
+      const { roomId, playerKey } = info;
+      const state = gameStates.get(roomId);
+
+      if (!state) return sendError(ws, 'اللعبة لم تبدأ بعد.');
+      if (state.winner) return sendError(ws, 'انتهت اللعبة بالفعل.');
+
+      let result;
+
+      switch (msg.type) {
+        case 'draw_card':
+          result = drawCard(state, playerKey);
+          break;
+
+        case 'summon_monster':
+          result = summonMonster(state, playerKey, msg.cardId, msg.slotIndex, msg.tributeIndices || []);
+          break;
+
+        case 'set_spell_trap':
+          result = setSpellTrap(state, playerKey, msg.cardId, msg.slotIndex);
+          break;
+
+        case 'activate_spell':
+          result = activateSpell(state, playerKey, msg.cardId, msg.slotIndex);
+          break;
+
+        case 'go_to_battle':
+          result = goToBattlePhase(state, playerKey);
+          break;
+
+        case 'attack_monster':
+          result = attackMonster(state, playerKey, msg.attackerSlot, msg.defenderSlot);
+          break;
+
+        case 'direct_attack':
+          result = directAttack(state, playerKey, msg.attackerSlot);
+          break;
+
+        case 'end_turn':
+          result = endTurn(state, playerKey);
+          break;
+
+        default:
+          return sendError(ws, `نوع حدث غير معروف: ${msg.type}`);
+      }
+
+      if (result && result.error) {
+        return sendError(ws, result.error);
+      }
+
+      broadcast(roomId, { type: 'game_state', state });
+    } catch (err) {
+      console.error('[WS] Message handler error:', err);
+      sendError(ws, 'حدث خطأ في الخادم. حاول مرة أخرى.');
     }
-
-    const info = wsInfo.get(ws);
-    if (!info) return;
-    const { roomId, playerKey } = info;
-    const state = gameStates.get(roomId);
-
-    if (!state) return sendError(ws, 'اللعبة لم تبدأ بعد.');
-    if (state.winner) return sendError(ws, 'انتهت اللعبة بالفعل.');
-
-    let result;
-
-    switch (msg.type) {
-      case 'draw_card':
-        result = drawCard(state, playerKey);
-        break;
-
-      case 'summon_monster':
-        result = summonMonster(state, playerKey, msg.cardId, msg.slotIndex, msg.tributeIndices || []);
-        break;
-
-      case 'set_spell_trap':
-        result = setSpellTrap(state, playerKey, msg.cardId, msg.slotIndex);
-        break;
-
-      case 'activate_spell':
-        result = activateSpell(state, playerKey, msg.cardId, msg.slotIndex);
-        break;
-
-      case 'go_to_battle':
-        result = goToBattlePhase(state, playerKey);
-        break;
-
-      case 'attack_monster':
-        result = attackMonster(state, playerKey, msg.attackerSlot, msg.defenderSlot);
-        break;
-
-      case 'direct_attack':
-        result = directAttack(state, playerKey, msg.attackerSlot);
-        break;
-
-      case 'end_turn':
-        result = endTurn(state, playerKey);
-        break;
-
-      default:
-        return sendError(ws, `نوع حدث غير معروف: ${msg.type}`);
-    }
-
-    if (result && result.error) {
-      return sendError(ws, result.error);
-    }
-
-    broadcast(roomId, { type: 'game_state', state });
   });
 
   ws.on('close', () => {
