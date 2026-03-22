@@ -357,34 +357,36 @@ function GameBoard() {
         {/* Opponent Field */}
         <div className="field-section">
           <div className="section-label" style={{ textAlign: 'center' }}>ساحة الخصم</div>
-          <div className="field-row">
-            {/* Monster Slots */}
-            <div className="field-slots">
-              {oppState.field.map((monster, idx) => (
-                <div
-                  key={idx}
-                  className={`field-slot ${monster ? 'has-monster' : ''} ${attackMode ? 'selectable-target' : ''}`}
-                  onClick={() => handleOppFieldSlotClick(idx)}
-                >
-                  {monster ? (
-                    <FieldMonsterCard monster={monster} isOpponent />
-                  ) : (
-                    <span className="field-slot-number">{idx + 1}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-            {/* Spell/Trap Slots */}
-            <div className="field-slots spell-trap-slots">
-              {oppState.spellTrapField.map((card, idx) => (
-                <div key={idx} className={`field-slot st-slot ${card ? 'has-card' : ''}`}>
-                  {card ? (
-                    <div className="st-card back" />
-                  ) : (
-                    <span className="field-slot-number">ST</span>
-                  )}
-                </div>
-              ))}
+          <div className="field-carousel-container">
+            <div className="field-row-scrollable">
+              {/* Monster Slots */}
+              <div className="field-slots">
+                {oppState.field.map((monster, idx) => (
+                  <div
+                    key={idx}
+                    className={`field-slot ${monster ? 'has-monster' : ''} ${attackMode ? 'selectable-target' : ''}`}
+                    onClick={() => handleOppFieldSlotClick(idx)}
+                  >
+                    {monster ? (
+                      <FieldMonsterCard monster={monster} isOpponent />
+                    ) : (
+                      <span className="field-slot-number">{idx + 1}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {/* Spell/Trap Slots */}
+              <div className="field-slots spell-trap-slots">
+                {oppState.spellTrapField.map((card, idx) => (
+                  <div key={idx} className={`field-slot st-slot ${card ? 'has-card' : ''}`}>
+                    {card ? (
+                      <div className="st-card back" />
+                    ) : (
+                      <span className="field-slot-number">ST</span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -395,46 +397,48 @@ function GameBoard() {
         {/* My Field */}
         <div className="field-section">
           <div className="section-label" style={{ textAlign: 'center' }}>ساحتك</div>
-          <div className="field-row">
-            {/* Spell/Trap Slots */}
-            <div className="field-slots spell-trap-slots">
-              {myState.spellTrapField.map((card, idx) => (
-                <div
-                  key={idx}
-                  className={`field-slot st-slot ${card ? 'has-card' : 'empty-player'}`}
-                  onClick={() => handleMySTSlotClick(idx)}
-                >
-                  {card ? (
-                    <div className={`st-card type-${card.type.toLowerCase()}`} onClick={(e) => { e.stopPropagation(); handleShowDetail(card); }}>
-                      <div className="st-name">{card.name}</div>
-                    </div>
-                  ) : (
-                    <span className="field-slot-number">ST</span>
-                  )}
-                </div>
-              ))}
-            </div>
-            {/* Monster Slots */}
-            <div className="field-slots">
-              {myState.field.map((monster, idx) => (
-                <div
-                  key={idx}
-                  className={`field-slot ${monster ? 'has-monster' : ''} ${tributeNeeded > 0 && monster ? 'tribute-target' : ''} ${tributeIndices.includes(idx) ? 'tribute-selected' : ''}`}
-                  onClick={() => handleMyFieldSlotClick(idx)}
-                >
-                  {monster ? (
-                    <FieldMonsterCard
-                      monster={monster}
-                      canAttack={inBattlePhase && !monster.justSummoned && !myState.attackedThisTurn}
-                      isSelected={attackMode && attackerSlot === idx}
-                    />
-                  ) : (
-                    <span className="field-slot-number">
-                      {targetSlot === idx ? '🎯' : idx + 1}
-                    </span>
-                  )}
-                </div>
-              ))}
+          <div className="field-carousel-container">
+            <div className="field-row-scrollable">
+              {/* Spell/Trap Slots */}
+              <div className="field-slots spell-trap-slots">
+                {myState.spellTrapField.map((card, idx) => (
+                  <div
+                    key={idx}
+                    className={`field-slot st-slot ${card ? 'has-card' : 'empty-player'}`}
+                    onClick={() => handleMySTSlotClick(idx)}
+                  >
+                    {card ? (
+                      <div className={`st-card type-${card.type.toLowerCase()}`} onClick={(e) => { e.stopPropagation(); }}>
+                        <div className="st-name">{card.name}</div>
+                      </div>
+                    ) : (
+                      <span className="field-slot-number">ST</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {/* Monster Slots */}
+              <div className="field-slots">
+                {myState.field.map((monster, idx) => (
+                  <div
+                    key={idx}
+                    className={`field-slot ${monster ? 'has-monster' : ''} ${tributeNeeded > 0 && monster ? 'tribute-target' : ''} ${tributeIndices.includes(idx) ? 'tribute-selected' : ''}`}
+                    onClick={() => handleMyFieldSlotClick(idx)}
+                  >
+                    {monster ? (
+                      <FieldMonsterCard
+                        monster={monster}
+                        canAttack={inBattlePhase && !monster.justSummoned && !myState.attackedThisTurn}
+                        isSelected={attackMode && attackerSlot === idx}
+                      />
+                    ) : (
+                      <span className="field-slot-number">
+                        {targetSlot === idx ? '🎯' : idx + 1}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -453,27 +457,21 @@ function GameBoard() {
 
         {/* My Hand */}
         <div className="hand-section">
-          <div className="section-label">يدك ({myState.hand.length} بطاقات)</div>
-          <div className="hand-cards">
+          <div className="hand-fan-wrapper">
             {myState.hand.map((card, i) => (
               <MonsterHandCard
                 key={card.id + '-' + i}
                 card={card}
+                index={i}
+                total={myState.hand.length}
                 selected={selectedHandCard === card.id}
                 disabled={!canSummon}
                 onClick={() => handleHandCardClick(card, i)}
               />
             ))}
-            {myState.hand.length === 0 && (
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', alignSelf: 'center' }}>
-                لا توجد بطاقات في اليد
-              </span>
-            )}
           </div>
-          {selectedHandCard !== null && canSummon && (
-            <div style={{ fontSize: '0.75rem', color: 'var(--gold)', paddingLeft: 8 }}>
-              ✨ تم اختيار البطاقة — انقر على فتحة فارغة في الساحة للاستدعاء
-            </div>
+          {myState.hand.length === 0 && (
+            <div className="empty-hand-msg">لا توجد بطاقات في اليد</div>
           )}
         </div>
 
@@ -551,15 +549,23 @@ function GameBoard() {
   );
 }
 
-function MonsterHandCard({ card, selected, disabled, onClick }) {
+function MonsterHandCard({ card, index, total, selected, disabled, onClick }) {
   const isMonster = card.type === 'Monster';
   const imgUrl = getCardImage(card);
+
+  // Calculate fan rotation
+  const rotation = (index - (total - 1) / 2) * 6;
+  const translationY = Math.abs(index - (total - 1) / 2) * 5;
+
   return (
     <div
       id={`hand-card-${card.id}`}
-      className={`monster-card ${selected ? 'selected' : ''} type-${card.type.toLowerCase()}`}
+      className={`monster-card-fan ${selected ? 'selected' : ''}`}
       style={{
-        opacity: disabled && !selected ? 0.6 : 1,
+        '--index': index,
+        '--rotation': `${rotation}deg`,
+        '--y': `${translationY}px`,
+        opacity: disabled && !selected ? 0.7 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
       }}
       onClick={disabled ? undefined : onClick}
