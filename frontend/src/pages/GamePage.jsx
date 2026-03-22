@@ -95,7 +95,17 @@ function GameBoard() {
     setAttackerSlot(null);
   };
 
-  if (!gameState || !myState || !oppState) return <div className="loading-screen">Loading Duel...</div>;
+  if (!gameState || !myState || !oppState) return (
+    <div className="loading-screen">
+       <div className="loading-content">
+          <h1>LOADING DUEL</h1>
+          <div className="loading-bar">
+             <div className="loading-progress" />
+          </div>
+          <p>Preparing the Arena...</p>
+       </div>
+    </div>
+  );
 
   const winner = gameState.winner;
   const oppLP = oppState.lp;

@@ -38,8 +38,8 @@ body {
   background: radial-gradient(circle at center, #101030 0%, #050510 100%);
   gap: 20px;
   position: relative;
-  overflow: hidden;
-  direction: rtl; /* Force RTL for Arabic layout */
+  overflow-y: auto; /* Fix for scroll issue */
+  direction: rtl; 
 }
 
 /* Moving Orbs */
@@ -352,16 +352,67 @@ body {
   align-items: center;
   pointer-events: auto;
   width: 100%;
+  padding: 10px;
 }
 
 .lp-display {
-  background: rgba(0,0,0,0.6);
+  background: rgba(0,0,0,0.7);
   backdrop-filter: blur(10px);
-  padding: 6px 14px;
-  border-radius: 10px;
+  padding: 8px 18px;
+  border-radius: 12px;
   border: 1px solid var(--glass-border);
-  min-width: 100px;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 0 15px rgba(0,0,0,0.5);
 }
+.lp-display.opponent { border-top: 3px solid #f32; }
+.lp-display.player { border-bottom: 3px solid var(--neon-blue); }
+
+.lp-val { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; }
+.phase-indicator {
+  background: var(--neon-gold);
+  color: #000;
+  padding: 4px 15px;
+  border-radius: 20px;
+  font-weight: 900;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  box-shadow: 0 0 15px var(--neon-gold);
+}
+
+.side-actions {
+  position: absolute;
+  left: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  pointer-events: auto;
+  z-index: 100;
+}
+
+.pulse { animation: pulseAnim 1.5s infinite; }
+@keyframes pulseAnim { 0% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 204, 0, 0); } 50% { transform: scale(1.05); box-shadow: 0 0 20px var(--neon-gold); } 100% { transform: scale(1); box-shadow: 0 0 0 rgba(255, 204, 0, 0); } }
+
+/* Victory Overlay */
+.victory-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(25px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.victory-card {
+  text-align: center;
+  animation: modalIn 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+.victory-card h1 { font-size: 5rem; color: var(--neon-gold); text-shadow: 0 0 50px var(--neon-gold); margin-bottom: 30px; letter-spacing: 10px; }
 
 .hand-bar-v2 {
   height: 90px;
@@ -450,5 +501,145 @@ body {
   .phase-indicator { font-size: 0.85rem; }
 }
 
-@keyframes modalIn { from { transform: scale(0.95) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
-@keyframes slideDown { from { transform: translate(-50%, -30px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+/* --- Loading Screen --- */
+.loading-screen {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #050510;
+  color: var(--neon-gold);
+  font-size: 2rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 5px;
+  animation: pulse 2s infinite;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.loading-bar {
+  width: 200px;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+.loading-progress {
+  position: absolute;
+  height: 100%;
+  width: 50%;
+  background: var(--neon-gold);
+  animation: loadingMove 1.5s infinite ease-in-out;
+}
+@keyframes loadingMove { from { left: -50%; } to { left: 100%; } }
+.loading-content p { font-size: 0.8rem; color: #888; letter-spacing: 1px; }
+
+/* --- Authentic Card Face (The Soul of the Game) --- */
+.authentic-card-face-v2 {
+  width: 320px;
+  height: 465px;
+  background: #2b1d0e;
+  border-radius: 12px;
+  border: 8px solid #3d2b1f;
+  box-shadow: 10px 10px 30px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
+  gap: 10px;
+  position: relative;
+  transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+.authentic-card-face-v2.large { transform: scale(1); }
+
+.card-header-v2 {
+  background: rgba(255,255,255,0.8);
+  padding: 5px 12px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 2px solid var(--gold);
+}
+.card-name-v2 { color: #000; font-weight: 900; font-size: 1.1rem; font-family: 'Cinzel', serif; }
+.card-attr { color: #800; font-weight: 900; font-size: 0.8rem; }
+
+.card-art-v2 {
+  flex: 1;
+  background-size: cover;
+  background-position: center;
+  border: 4px solid #3d2b1f;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+}
+
+.card-desc-box-v2 {
+  background: #fdf5e6;
+  border: 3px solid var(--gold);
+  padding: 8px;
+  min-height: 120px;
+  color: #111;
+  font-family: serif;
+}
+.card-type-v2 { font-weight: 900; font-size: 0.9rem; margin-bottom: 4px; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
+.card-text-v2 { font-size: 0.85rem; line-height: 1.3; overflow-y: auto; max-height: 70px; direction: rtl; text-align: right; }
+.card-atkdef-v2 { border-top: 1px solid #ccc; margin-top: 5px; padding-top: 5px; text-align: right; font-weight: 900; font-size: 1rem; }
+
+/* Hand Card Refinement */
+.hand-card-v2 {
+  width: clamp(50px, 15vw, 85px);
+  aspect-ratio: 2/3;
+  transition: all 0.3s ease;
+  position: relative;
+  bottom: 0;
+}
+.hand-card-v2:hover { transform: translateY(-30px) scale(1.2); z-index: 100; cursor: pointer; }
+.hand-card-v2 img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid var(--glass-border); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+
+/* Field Card (Mini Card) */
+.mini-card-v2 {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #2b1d0e;
+  border: 2px solid var(--gold);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.mini-art { flex: 1; background-size: cover; background-position: center; }
+.mini-stats { background: rgba(0,0,0,0.8); color: var(--neon-gold); font-size: 0.6rem; font-weight: 900; text-align: center; padding: 2px 0; }
+
+.attacker-active { border-color: var(--neon-gold); box-shadow: 0 0 20px var(--neon-gold); transform: scale(1.05); }
+.attack-target { border-color: #f32; box-shadow: 0 0 20px #f32; cursor: crosshair; }
+
+.toast-v2 {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.9);
+  padding: 20px 40px;
+  border-radius: 50px;
+  border: 2px solid var(--neon-gold);
+  color: white;
+  z-index: 5000;
+  font-weight: 700;
+  animation: slideIn 0.3s ease-out;
+}
+.toast-v2.error { border-color: #f32; }
+
+@keyframes slideIn { from { transform: translate(-50%, -30px); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
+
+/* Re-fixing Modal Controls alignment */
+.modal-footer-v2 { margin-top: auto; padding-top: 20px; }
+
+@media (max-width: 768px) {
+  .authentic-card-face-v2 { transform: scale(0.8); }
+  .modal-content-v2 { padding: 10px; }
+  .modal-header-compact { text-align: right; direction: rtl; }
+}
