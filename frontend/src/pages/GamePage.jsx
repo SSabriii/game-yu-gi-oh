@@ -256,8 +256,6 @@ function GameBoard() {
 
   function handleOppFieldSlotClick(slotIdx) {
     if (!attackMode || attackerSlot === null) return;
-    const target = oppState.field[slotIdx];
-    if (!target) return;
     attackMonster(attackerSlot, slotIdx);
     setAttackMode(false);
     setAttackerSlot(null);
@@ -307,29 +305,6 @@ function GameBoard() {
         </div>
       )}
 
-      {/* Card Detail Modal */}
-      {detailCard && (
-        <div className="card-detail-overlay" onClick={() => setDetailCard(null)}>
-          <div className="card-detail-modal" onClick={e => e.stopPropagation()}>
-            <div className={`detail-card-visual type-${detailCard.type.toLowerCase()}`} style={{ backgroundImage: `url(${getCardImage(detailCard)})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
-              <div className="detail-card-overlay-text">
-                <h3>{detailCard.name}</h3>
-                {detailCard.type === 'Monster' && (
-                  <div className="detail-stats">
-                    <span>⚔ {detailCard.atk}</span>
-                    <span>🛡 {detailCard.def}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="detail-info">
-              <div className="detail-type">{detailCard.type === 'Monster' ? 'وحش' : detailCard.type === 'Spell' ? 'سحر' : 'فخ'}</div>
-              <p className="detail-effect">{detailCard.effect || 'لا يوجد تأثير خاص.'}</p>
-              <button className="btn btn-gold btn-sm" onClick={() => setDetailCard(null)}>إغلاق</button>
-            </div>
-          </div>
-        </div>
-      )}
 
 
       {/* Top Bar */}
@@ -388,10 +363,11 @@ function GameBoard() {
               {oppState.field.map((monster, idx) => (
                 <div
                   key={idx}
-                  className={`field-slot ${monster ? 'has-monster' : ''}`}
+                  className={`field-slot ${monster ? 'has-monster' : ''} ${attackMode ? 'selectable-target' : ''}`}
+                  onClick={() => handleOppFieldSlotClick(idx)}
                 >
                   {monster ? (
-                    <FieldMonsterCard monster={monster} isOpponent onShowDetail={handleShowDetail} />
+                    <FieldMonsterCard monster={monster} isOpponent />
                   ) : (
                     <span className="field-slot-number">{idx + 1}</span>
                   )}
@@ -451,7 +427,6 @@ function GameBoard() {
                       monster={monster}
                       canAttack={inBattlePhase && !monster.justSummoned && !myState.attackedThisTurn}
                       isSelected={attackMode && attackerSlot === idx}
-                      onShowDetail={handleShowDetail}
                     />
                   ) : (
                     <span className="field-slot-number">
@@ -584,57 +559,51 @@ function MonsterHandCard({ card, selected, disabled, onClick }) {
       id={`hand-card-${card.id}`}
       className={`monster-card ${selected ? 'selected' : ''} type-${card.type.toLowerCase()}`}
       style={{
-        backgroundImage: `url(${imgUrl})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
         opacity: disabled && !selected ? 0.6 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
       }}
       onClick={disabled ? undefined : onClick}
     >
-      <div className="card-content-overlay">
-        <div className="card-name-label">{card.name}</div>
-        {isMonster ? (
-          <>
-            <div className="card-stats-row">
-              <span>⚔ {card.atk}</span>
-              <span>🛡 {card.def}</span>
+      <div className="card-inner">
+        <div className="card-header">
+          <span className="card-name">{card.name}</span>
+          <span className="card-attribute">DARK</span>
+        </div>
+        <div className="card-image-box" style={{ backgroundImage: `url(${imgUrl})` }} />
+        <div className="card-effect-box">
+          <div className="card-type-line">
+            [{isMonster ? 'Fiend / Effect' : card.type}]
+          </div>
+          <div className="card-effect-text">{card.effect || "No effect text available for this card."}</div>
+          {isMonster && (
+            <div className="card-stats-line">
+              ATK / {card.atk} DEF / {card.def}
             </div>
-          </>
-        ) : (
-          <div className="card-type-label">{card.type === 'Spell' ? 'سحر' : 'فخ'}</div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function FieldMonsterCard({ monster, isOpponent, canAttack, isSelected, onShowDetail }) {
+function FieldMonsterCard({ monster, isOpponent, canAttack, isSelected }) {
   const imgUrl = getCardImage(monster);
   return (
     <div
       className={`field-monster ${canAttack ? 'can-attack' : ''} ${monster.justSummoned ? 'just-summoned' : ''} ${isSelected ? 'selectable-target' : ''}`}
-      style={{
-        backgroundImage: `url(${imgUrl})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        border: `2px solid ${isSelected ? '#ff4040' : '#8b4513'}`,
-        width: 80,
-        height: 100,
-      }}
-      onClick={(e) => {
-        if (onShowDetail) {
-          e.stopPropagation();
-          onShowDetail(monster);
-        }
-      }}
     >
-      <div className="card-content-overlay">
-        {monster.justSummoned && <div className="just-summoned-badge">جديد</div>}
-        <div className="card-name-label" style={{ fontSize: '0.65rem' }}>{monster.name}</div>
-        <div className="card-stats-row" style={{ fontSize: '0.65rem', justifyContent: 'center', gap: '4px' }}>
-          <span>⚔ {monster.atk}</span>
-          <span>🛡 {monster.def}</span>
+      <div className="card-inner">
+        <div className="card-header">
+          <span className="card-name">{monster.name}</span>
+          <span className="card-attribute">DARK</span>
+        </div>
+        <div className="card-image-box" style={{ backgroundImage: `url(${imgUrl})` }} />
+        <div className="card-effect-box">
+          <div className="card-type-line">[Fiend / Effect]</div>
+          <div className="card-effect-text">{monster.effect || "No effect text."}</div>
+          <div className="card-stats-line">
+            ATK / {monster.atk} DEF / {monster.def}
+          </div>
         </div>
       </div>
     </div>
