@@ -23,7 +23,6 @@ body {
   font-family: 'Outfit', sans-serif;
   background: var(--deep-bg);
   color: white;
-  overflow: hidden;
   user-select: none;
 }
 
@@ -34,11 +33,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start; /* Ensure scroll starts from top */
+  padding: 40px 0;
   background: radial-gradient(circle at center, #101030 0%, #050510 100%);
-  gap: 20px;
+  gap: 30px;
   position: relative;
-  overflow-y: auto; /* Fix for scroll issue */
+  overflow-y: auto;
   direction: rtl; 
 }
 
