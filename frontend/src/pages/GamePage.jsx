@@ -40,7 +40,7 @@ function GameBoard() {
   const [tributeNeeded, setTributeNeeded] = useState(0);
   const [tributeIndices, setTributeIndices] = useState([]);
   const [targetSlot, setTargetSlot] = useState(null);
-  const [detailCard, setDetailCard] = useState(null);
+  const [hoveredCard, setHoveredCard] = useState(null);
   const [attackMode, setAttackMode] = useState(false);
   const [attackerSlot, setAttackerSlot] = useState(null);
   const [localError, setLocalError] = useState(null);
@@ -139,11 +139,11 @@ function GameBoard() {
     if (selectedHandCard === card.id) {
       setSelectedHandCard(null);
       setSelectedHandIndex(null);
-      setDetailCard(null);
+      setHoveredCard(null);
     } else {
       setSelectedHandCard(card.id);
       setSelectedHandIndex(idx);
-      setDetailCard(card);
+      setHoveredCard(card);
     }
   }
 
@@ -247,12 +247,10 @@ function GameBoard() {
     setSpellTrap(selectedHandCard, slotIdx);
     setSelectedHandCard(null);
     setSelectedHandIndex(null);
-    setDetailCard(null);
+    setHoveredCard(null);
   }
 
-  const handleShowDetail = (card) => {
-    setDetailCard(card);
-  };
+  const handleShowDetail = (card) => setHoveredCard(card);
 
   function handleOppFieldSlotClick(slotIdx) {
     if (!attackMode || attackerSlot === null) return;
@@ -275,155 +273,103 @@ function GameBoard() {
 
   const oppHasMonsters = oppState.field.some(s => s !== null);
 
+  if (!myState || !oppState) return <div className="loading">جاري تحميل البيانات...</div>;
+
   return (
-    <div className="game-page">
-      {/* Winner Overlay */}
-      {winner && (
-        <div className="winner-overlay">
-          <div className="winner-card">
-            {winner === 'draw' ? (
-              <>
-                <h2>🤝 تعادل!</h2>
-                <p>تمت هزيمة كلا اللاعبين!</p>
-              </>
-            ) : winner === playerKey ? (
-              <>
-                <h2>🏆 انتصار!</h2>
-                <p>لقد هزمت خصمك!</p>
-              </>
-            ) : (
-              <>
-                <h2>💀 هزيمة!</h2>
-                <p>لقد فاز {oppUsername} بالمبارزة!</p>
-              </>
-            )}
-            <button className="btn btn-gold" style={{ padding: '14px 40px', fontSize: '1rem' }}
-              onClick={() => navigate('/lobby')}>
-              🏠 العودة إلى الردهة
-            </button>
-          </div>
+    <div className="game-container-dual">
+      <div className="inspector-panel">
+        <div className="inspector-sticky">
+          <CardInspector card={hoveredCard || (myState.hand.length > 0 ? myState.hand[0] : null)} />
         </div>
-      )}
-
-
-
-      {/* Top Bar */}
-      <div className="phase-banner">
-        <div className="game-title">⚔ ديول ماسترز أونلاين</div>
-        <div className="phase-info">
-          <span className={`turn-badge ${isMyTurn ? 'your-turn' : 'opponent-turn'}`}>
-            {isMyTurn ? '⚔ دورك' : `دور ${oppUsername}`}
-          </span>
-          <span className={`phase-badge phase-${phase}`}>
-            {phase === 'draw' ? '🃏 سحب' : phase === 'main' ? '⚙ الرئيسي' : '⚡ القتال'}
-          </span>
-          <div className="deck-badge">🃏 متبقي <span>{myState.deck.length}</span></div>
-        </div>
-        <button className="btn btn-outline btn-sm" onClick={() => navigate('/lobby')}>← الردهة</button>
       </div>
 
-      {/* Error toast */}
-      {error && (
-        <div className="alert alert-error" style={{ margin: '8px 12px 0', flexShrink: 0 }}>
-          ⚠ {error}
-        </div>
-      )}
-
-      {/* Battlefield */}
-      <div className="battlefield">
-        {/* Opponent LP */}
-        <div className="lp-bar-container">
-          <div className="lp-username opponent">🗡 {oppUsername}</div>
-          <div className="lp-track">
-            <div className="lp-fill opponent" style={{ width: `${Math.max(0, (oppLP / maxLP) * 100)}%` }} />
+      <div className="board-panel">
+        <div className="phase-banner">
+          <div className="game-title">YGO DUEL</div>
+          <div className="phase-info">
+            <span className="turn-badge">{isMyTurn ? 'دورك' : 'دور الخصم'}</span>
+            <span className="phase-badge">{phase.toUpperCase()} PHASE</span>
+            <div className="deck-badge">🎴 <span>{myState.deck.length}</span></div>
           </div>
-          <div className="lp-value opponent">{Math.max(0, oppLP)}</div>
-          <div className="deck-badge">🃏 <span>{oppState.deck.length}</span></div>
+          <button className="btn btn-outline btn-sm" onClick={() => navigate('/lobby')}>انسحاب</button>
         </div>
 
-        {/* Opponent Hand (face-down) */}
-        <div className="hand-section">
-          <div className="section-label">يد الخصم ({oppState.hand.length} بطاقات)</div>
-          <div className="hand-cards" style={{ minHeight: 64 }}>
-            {oppState.hand.map((_, i) => (
-              <div key={i} className="monster-card back" style={{ width: 48, height: 68 }} />
-            ))}
-            {oppState.hand.length === 0 && (
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', alignSelf: 'center' }}>لا توجد بطاقات</span>
-            )}
+        {(error || localError) && (
+          <div className="alert alert-error" style={{ margin: '8px 12px 0', flexShrink: 0 }}>
+            ⚠ {error || localError}
           </div>
-        </div>
+        )}
 
-        {/* Opponent Field */}
-        <div className="field-section">
-          <div className="section-label" style={{ textAlign: 'center' }}>ساحة الخصم</div>
-          <div className="field-carousel-container">
-            <div className="field-row-scrollable">
-              {/* Monster Slots */}
+        <div className="battlefield">
+          <div className="lp-bar-container">
+            <div className="lp-username opponent">💀 {oppUsername}</div>
+            <div className="lp-track">
+              <div className="lp-fill opponent" style={{ width: `${Math.max(0, (oppLP / maxLP) * 100)}%` }} />
+            </div>
+            <div className="lp-value opponent">{Math.max(0, oppLP)}</div>
+            <div className="deck-badge">🃏 <span>{oppState.deck.length}</span></div>
+          </div>
+
+          <div className="hand-section opp-hand">
+            <div className="section-label">يد الخصم ({oppState.hand.length})</div>
+            <div className="hand-cards">
+              {oppState.hand.map((_, i) => (
+                <div key={i} className="monster-card back" style={{ width: 40, height: 56 }} />
+              ))}
+            </div>
+          </div>
+
+          <div className="field-section">
+            <div className="field-grid">
               <div className="field-slots">
                 {oppState.field.map((monster, idx) => (
                   <div
                     key={idx}
                     className={`field-slot ${monster ? 'has-monster' : ''} ${attackMode ? 'selectable-target' : ''}`}
                     onClick={() => handleOppFieldSlotClick(idx)}
+                    onMouseEnter={() => monster && setHoveredCard(monster)}
                   >
-                    {monster ? (
-                      <FieldMonsterCard monster={monster} isOpponent />
-                    ) : (
-                      <span className="field-slot-number">{idx + 1}</span>
-                    )}
+                    {monster ? <FieldMonsterCard monster={monster} isOpponent /> : <span className="field-slot-number">{idx + 1}</span>}
                   </div>
                 ))}
               </div>
-              {/* Spell/Trap Slots */}
               <div className="field-slots spell-trap-slots">
                 {oppState.spellTrapField.map((card, idx) => (
                   <div key={idx} className={`field-slot st-slot ${card ? 'has-card' : ''}`}>
-                    {card ? (
-                      <div className="st-card back" />
-                    ) : (
-                      <span className="field-slot-number">ST</span>
-                    )}
+                    {card ? <div className="st-card back" onMouseEnter={() => setHoveredCard(card)} /> : <span className="field-slot-number">ST</span>}
                   </div>
                 ))}
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Divider */}
-        <div className="field-divider" />
+          <div className="field-divider" />
 
-        {/* My Field */}
-        <div className="field-section">
-          <div className="section-label" style={{ textAlign: 'center' }}>ساحتك</div>
-          <div className="field-carousel-container">
-            <div className="field-row-scrollable">
-              {/* Spell/Trap Slots */}
+          <div className="field-section">
+            <div className="field-grid">
               <div className="field-slots spell-trap-slots">
                 {myState.spellTrapField.map((card, idx) => (
                   <div
                     key={idx}
                     className={`field-slot st-slot ${card ? 'has-card' : 'empty-player'}`}
                     onClick={() => handleMySTSlotClick(idx)}
+                    onMouseEnter={() => card && setHoveredCard(card)}
                   >
                     {card ? (
-                      <div className={`st-card type-${card.type.toLowerCase()}`} onClick={(e) => { e.stopPropagation(); }}>
+                      <div className={`st-card type-${card.type.toLowerCase()}`} onClick={(e) => e.stopPropagation()}>
                         <div className="st-name">{card.name}</div>
                       </div>
-                    ) : (
-                      <span className="field-slot-number">ST</span>
-                    )}
+                    ) : <span className="field-slot-number">ST</span>}
                   </div>
                 ))}
               </div>
-              {/* Monster Slots */}
               <div className="field-slots">
                 {myState.field.map((monster, idx) => (
                   <div
                     key={idx}
                     className={`field-slot ${monster ? 'has-monster' : ''} ${tributeNeeded > 0 && monster ? 'tribute-target' : ''} ${tributeIndices.includes(idx) ? 'tribute-selected' : ''}`}
                     onClick={() => handleMyFieldSlotClick(idx)}
+                    onMouseEnter={() => monster && setHoveredCard(monster)}
                   >
                     {monster ? (
                       <FieldMonsterCard
@@ -431,145 +377,111 @@ function GameBoard() {
                         canAttack={inBattlePhase && !monster.justSummoned && !myState.attackedThisTurn}
                         isSelected={attackMode && attackerSlot === idx}
                       />
-                    ) : (
-                      <span className="field-slot-number">
-                        {targetSlot === idx ? '🎯' : idx + 1}
-                      </span>
-                    )}
+                    ) : <span className="field-slot-number">{targetSlot === idx ? '🎯' : idx + 1}</span>}
                   </div>
                 ))}
               </div>
             </div>
           </div>
+
+          <div className="lp-bar-container">
+            <div className="lp-username player">🛡 {myUsername}</div>
+            <div className="lp-track">
+              <div className="lp-fill player" style={{ width: `${Math.max(0, (myLP / maxLP) * 100)}%` }} />
+            </div>
+            <div className="lp-value player">{Math.max(0, myLP)}</div>
+          </div>
+
+          <div className="hand-section">
+            <div className="hand-row">
+              {myState.hand.map((card, i) => (
+                <MonsterHandCard
+                  key={card.id + '-' + i}
+                  card={card}
+                  selected={selectedHandCard === card.id}
+                  disabled={!canSummon}
+                  onClick={() => handleHandCardClick(card, i)}
+                  onMouseEnter={() => setHoveredCard(card)}
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Attack mode banner */}
-        {attackMode && (
-          <div className="attack-select-banner">
-            {oppHasMonsters
-              ? '⚔ اختر وحشاً من وحوش الخصم للهجوم، أو هجوم مباشر إذا كانت الساحة خالية'
-              : '⚡ الخصم ليس لديه وحوش — استخدم الهجوم المباشر!'}
-            <button className="btn btn-outline btn-sm" style={{ marginLeft: 12 }} onClick={handleCancelAttack}>
-              إلغاء
-            </button>
-          </div>
-        )}
-
-        {/* My Hand */}
-        <div className="hand-section">
-          <div className="hand-fan-wrapper">
-            {myState.hand.map((card, i) => (
-              <MonsterHandCard
-                key={card.id + '-' + i}
-                card={card}
-                index={i}
-                total={myState.hand.length}
-                selected={selectedHandCard === card.id}
-                disabled={!canSummon}
-                onClick={() => handleHandCardClick(card, i)}
-              />
-            ))}
-          </div>
-          {myState.hand.length === 0 && (
-            <div className="empty-hand-msg">لا توجد بطاقات في اليد</div>
-          )}
-        </div>
-
-        {/* My LP */}
-        <div className="lp-bar-container">
-          <div className="lp-username player">🛡 {myUsername}</div>
-          <div className="lp-track">
-            <div className="lp-fill player" style={{ width: `${Math.max(0, (myLP / maxLP) * 100)}%` }} />
-          </div>
-          <div className="lp-value player">{Math.max(0, myLP)}</div>
-        </div>
-
-        {/* Error toast */}
-        {(error || localError) && (
-          <div className="alert alert-error" style={{ margin: '8px 12px 0', flexShrink: 0, border: '2px solid #ff4040', animation: 'shake 0.5s' }}>
-            ⚠ {error || localError}
-          </div>
-        )}
-
-        {/* Battle Log */}
-        <div className="battle-log">
-          {(gameState.log || []).map((entry, i) => (
-            <div key={i} className="log-entry">{entry}</div>
-          ))}
-          <div ref={logEndRef} />
-        </div>
-      </div>
-
-      {/* Action Bar */}
-      <div className="action-bar">
-        <div className="action-buttons">
-          <button
-            id="draw-btn"
-            className={`btn btn-primary ${canDraw ? 'pulse-gold' : ''}`}
-            onClick={drawCard}
-            disabled={!canDraw}
-          >
-            🃏 سحب
-          </button>
-          <button
-            id="battle-btn"
-            className="btn btn-danger"
-            onClick={goToBattle}
-            disabled={!canGoToBattle}
-          >
-            ⚔ مرحلة القتال
-          </button>
-          {attackMode && !oppHasMonsters && (
+        <div className="action-bar">
+          <div className="action-buttons">
             <button
-              id="direct-attack-btn"
+               id="draw-btn"
+               className={`btn btn-primary ${canDraw ? 'pulse-gold' : ''}`}
+               onClick={drawCard}
+               disabled={!canDraw}
+            >🃏 سحب</button>
+            <button
+              id="battle-btn"
               className="btn btn-danger"
-              onClick={handleDirectAttack}
+              onClick={goToBattle}
+              disabled={!canGoToBattle}
+            >⚔ هجوم</button>
+            <button
+              id="end-turn-btn"
+              className="btn btn-outline"
+              onClick={endTurn}
+              disabled={!canEndTurn}
             >
-              ⚡ هجوم مباشر
+              ⏭ إنهاء الدور
             </button>
-          )}
-          <button
-            id="end-turn-btn"
-            className="btn btn-outline"
-            onClick={endTurn}
-            disabled={!canEndTurn}
-          >
-            ⏭ إنهاء الدور
-          </button>
-        </div>
-        <div className="action-hint">
-          {!isMyTurn && `في انتظار ${oppUsername}...`}
-          {isMyTurn && phase === 'draw' && 'اسحب بطاقة لبدء دورك.'}
-          {isMyTurn && phase === 'main' && !myState.summonedThisTurn && 'اختر بطاقة من يدك، ثم انقر على فتحة في الساحة للاستدعاء.'}
-          {isMyTurn && phase === 'main' && myState.summonedThisTurn && 'يمكنك وضع سحر/فخ، أو ادخل مرحلة القتال، أو أنهِ دورك.'}
-          {isMyTurn && phase === 'battle' && !attackMode && 'انقر على وحش في ساحتك للهجوم به.'}
+          </div>
+          <div className="action-hint">
+            {!isMyTurn && `في انتظار ${oppUsername}...`}
+            {isMyTurn && phase === 'draw' && 'اسحب بطاقة.'}
+            {isMyTurn && phase === 'main' && 'العب أوراقك.'}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function MonsterHandCard({ card, index, total, selected, disabled, onClick }) {
+function MonsterHandCard({ card, selected, disabled, onClick, onMouseEnter }) {
   const isMonster = card.type === 'Monster';
   const imgUrl = getCardImage(card);
-
-  // Calculate fan rotation
-  const rotation = (index - (total - 1) / 2) * 6;
-  const translationY = Math.abs(index - (total - 1) / 2) * 5;
 
   return (
     <div
       id={`hand-card-${card.id}`}
-      className={`monster-card-fan ${selected ? 'selected' : ''}`}
+      className={`hand-card-item ${selected ? 'selected' : ''}`}
       style={{
-        '--index': index,
-        '--rotation': `${rotation}deg`,
-        '--y': `${translationY}px`,
         opacity: disabled && !selected ? 0.7 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
       }}
       onClick={disabled ? undefined : onClick}
+      onMouseEnter={onMouseEnter}
     >
+      <CardFace card={card} imgUrl={imgUrl} isMonster={isMonster} />
+    </div>
+  );
+}
+
+function CardInspector({ card }) {
+  if (!card) return (
+    <div className="inspector-placeholder">
+      <p>مرر الفأرة فوق بطاقة لرؤية تفاصيلها</p>
+    </div>
+  );
+
+  const imgUrl = getCardImage(card);
+  const isMonster = card.type === 'Monster';
+
+  return (
+    <div className="card-inspector-face">
+      <CardFace card={card} imgUrl={imgUrl} isMonster={isMonster} isLarge />
+    </div>
+  );
+}
+
+function CardFace({ card, imgUrl, isMonster, isLarge }) {
+  return (
+    <div className={`authentic-card-face ${isLarge ? 'large' : ''} type-${card.type.toLowerCase()}`}>
       <div className="card-inner">
         <div className="card-header">
           <span className="card-name">{card.name}</span>
@@ -580,7 +492,7 @@ function MonsterHandCard({ card, index, total, selected, disabled, onClick }) {
           <div className="card-type-line">
             [{isMonster ? 'Fiend / Effect' : card.type}]
           </div>
-          <div className="card-effect-text">{card.effect || "No effect text available for this card."}</div>
+          <div className="card-effect-text">{card.effect || "No effect text."}</div>
           {isMonster && (
             <div className="card-stats-line">
               ATK / {card.atk} DEF / {card.def}
@@ -595,23 +507,8 @@ function MonsterHandCard({ card, index, total, selected, disabled, onClick }) {
 function FieldMonsterCard({ monster, isOpponent, canAttack, isSelected }) {
   const imgUrl = getCardImage(monster);
   return (
-    <div
-      className={`field-monster ${canAttack ? 'can-attack' : ''} ${monster.justSummoned ? 'just-summoned' : ''} ${isSelected ? 'selectable-target' : ''}`}
-    >
-      <div className="card-inner">
-        <div className="card-header">
-          <span className="card-name">{monster.name}</span>
-          <span className="card-attribute">DARK</span>
-        </div>
-        <div className="card-image-box" style={{ backgroundImage: `url(${imgUrl})` }} />
-        <div className="card-effect-box">
-          <div className="card-type-line">[Fiend / Effect]</div>
-          <div className="card-effect-text">{monster.effect || "No effect text."}</div>
-          <div className="card-stats-line">
-            ATK / {monster.atk} DEF / {monster.def}
-          </div>
-        </div>
-      </div>
+    <div className={`field-monster ${canAttack ? 'can-attack' : ''} ${isSelected ? 'isSelected' : ''}`}>
+       <CardFace card={monster} imgUrl={imgUrl} isMonster={true} />
     </div>
   );
 }
