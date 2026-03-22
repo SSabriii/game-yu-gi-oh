@@ -241,43 +241,51 @@ body {
   overflow: hidden;
 }
 
-.field-grid-3d {
-  width: 100%;
-  max-width: 1000px;
-  height: auto;
-  min-height: 80vh;
-  transform: rotateX(20deg);
+.field-grid-3d.unified {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 15px;
-  padding: 20px;
+  gap: 2rem;
+  padding: 2rem;
+  perspective: 1500px;
 }
 
-.field-side {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.slots-row {
-  display: flex;
+.unified-slots {
+  display: grid;
+  grid-template-columns: repeat(5, 120px);
+  gap: 1.5rem;
   justify-content: center;
-  gap: 8px;
 }
 
 .field-slot-v2 {
-  aspect-ratio: 2/3;
-  width: clamp(36px, 12vw, 110px);
-  background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  width: 120px;
+  height: 170px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid rgba(255, 215, 0, 0.1);
+  border-radius: 10px;
   position: relative;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   cursor: pointer;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
 }
 
-.field-slot-v2:hover { border-color: var(--neon-blue); background: rgba(0, 229, 255, 0.1); }
+.field-slot-v2:hover { 
+  border-color: var(--neon-blue); 
+  background: rgba(0, 229, 255, 0.1); 
+  transform: translateY(-5px);
+}
+
+.field-slot-v2.drag-target {
+  background: rgba(255, 215, 0, 0.1);
+  border-color: #ffd700;
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+}
+
+.field-slot-v2.attacker-active {
+  border-color: #ff4d4d;
+  box-shadow: 0 0 25px rgba(255, 77, 77, 0.5);
+  animation: pulse-border 1.5s infinite;
+}
 
 .modal-header-compact {
   display: flex;
@@ -455,24 +463,93 @@ body {
 }
 .victory-card h1 { font-size: 5rem; color: var(--neon-gold); text-shadow: 0 0 50px var(--neon-gold); margin-bottom: 30px; letter-spacing: 10px; }
 
-.hand-bar-v2 {
-  height: 90px;
+/* Readable Hand Bar */
+.hand-bar-readable {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 5px;
-  padding-bottom: 5px;
-  pointer-events: auto;
+  gap: 1rem;
+  padding: 1.5rem 3rem;
+  background: linear-gradient(0deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 100%);
+  backdrop-filter: blur(20px);
+  border-radius: 30px 30px 0 0;
+  border: 1px solid rgba(255,255,255,0.1);
+  width: auto;
+  min-width: 60%;
+  max-width: 95%;
+  overflow-x: auto;
+  z-index: 100;
+  box-shadow: 0 -10px 50px rgba(0,0,0,0.8);
+  scrollbar-width: thin;
 }
 
-.hand-card-v2 {
-  width: clamp(40px, 12vw, 75px);
-  aspect-ratio: 2/3;
-  border-radius: 3px;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.2);
-  transition: transform 0.2s;
-  background: #000;
+.hand-card-detailed {
+  flex: 0 0 160px;
+  height: 230px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  border: 3px solid #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  position: relative;
+  transition: all 0.3s ease;
+  cursor: grab;
+  color: white;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+.hand-card-detailed:hover {
+  transform: translateY(-40px) scale(1.15) rotate(2deg);
+  z-index: 110;
+  border-color: #ffd700;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.hand-card-detailed.type-monster { border-color: #cd7f32; }
+.hand-card-detailed.type-spell { border-color: #1e8449; }
+.hand-card-detailed.type-trap { border-color: #7b241c; }
+
+.card-mini-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  margin-bottom: 5px;
+  font-weight: bold;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 2px;
+}
+
+.card-mini-art {
+  height: 90px;
+  width: 100%;
+  background-size: cover;
+  background-position: center;
+  border: 2px solid #000;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.card-mini-stats {
+  background: rgba(255,255,255,0.05);
+  padding: 4px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  flex-grow: 1;
+}
+
+.s-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+}
+
+.s-effect {
+  font-style: italic;
+  color: #ccc;
+  line-height: 1.2;
 }
 
 /* --- Detail Modal (Inspector) --- */

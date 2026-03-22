@@ -22,8 +22,7 @@ function createGameState(roomId, player1Username, player2Username) {
       lp: STARTING_LP,
       hand: hand1,
       deck: deck1,
-      field: new Array(FIELD_SLOTS).fill(null),
-      spellTrapField: new Array(FIELD_SLOTS).fill(null),
+      field: Array(FIELD_SLOTS).fill(null),
       graveyard: [],
       summonedThisTurn: false,
       attackedMonsterIds: [], // Track which monsters attacked this turn
@@ -33,8 +32,7 @@ function createGameState(roomId, player1Username, player2Username) {
       lp: STARTING_LP,
       hand: hand2,
       deck: deck2,
-      field: new Array(FIELD_SLOTS).fill(null),
-      spellTrapField: new Array(FIELD_SLOTS).fill(null),
+      field: Array(FIELD_SLOTS).fill(null),
       graveyard: [],
       summonedThisTurn: false,
       attackedMonsterIds: [],
@@ -98,7 +96,6 @@ function summonMonster(state, playerKey, cardId, slotIndex) {
   if (card.type !== 'Monster') return { error: 'هذا ليس وحشاً!' };
 
   player.hand.splice(cardIndex, 1);
-  // Rule 4: Monster contains ATK, DEF, and HP
   player.field[slotIndex] = { ...card, currentHP: card.hp, justSummoned: true, position: 'attack' };
   player.summonedThisTurn = true;
   state.log.push(`${player.username} استدعى ${card.name} (هجوم: ${card.atk}, حياة: ${card.hp}).`);
@@ -120,8 +117,8 @@ function attackMonster(state, playerKey, attackerSlot, defenderSlot) {
   const attackerCard = attacker.field[attackerSlot];
   const defenderCard = defender.field[defenderSlot];
 
-  if (!attackerCard) return { error: 'لا يوجد وحش في فتحة المهاجم.' };
-  if (!defenderCard) return { error: 'لا يوجد وحش في فتحة المدافع.' };
+  if (!attackerCard || attackerCard.type !== 'Monster') return { error: 'لا يوجد وحش في فتحة المهاجم.' };
+  if (!defenderCard || defenderCard.type !== 'Monster') return { error: 'لا يوجد وحش في فتحة المدافع.' };
   if (attackerCard.justSummoned) return { error: 'هذا الوحش تم استدعاؤه تواً ولا يمكنه الهجوم.' };
   
   // Track attack per monster
@@ -174,11 +171,11 @@ function directAttack(state, playerKey, attackerSlot) {
   if (state.turn !== playerKey) return { error: 'ليس دورك.' };
   if (state.phase !== 'battle') return { error: 'لست في مرحلة القتال.' };
 
-  const opponentHasMonsters = defender.field.some(slot => slot !== null);
+  const opponentHasMonsters = defender.field.some(slot => slot !== null && slot.type === 'Monster');
   if (opponentHasMonsters) return { error: 'الخصم لديه وحوش في الساحة.' };
 
   const attackerCard = attacker.field[attackerSlot];
-  if (!attackerCard) return { error: 'لا يوجد وحش مهاجم.' };
+  if (!attackerCard || attackerCard.type !== 'Monster') return { error: 'لا يوجد وحش مهاجم.' };
   if (attackerCard.justSummoned) return { error: 'هذا الوحش استدعي تواً.' };
   if (attacker.attackedMonsterIds.includes(attackerCard.id)) return { error: 'هاجم بالفعل.' };
 
@@ -200,7 +197,7 @@ function setSpellTrap(state, playerKey, cardId, slotIndex) {
   if (state.phase !== 'main') return { error: 'المرحلة غير صالحة.' };
   
   if (slotIndex < 0 || slotIndex >= FIELD_SLOTS) return { error: 'فتحة غير صالحة.' };
-  if (player.spellTrapField[slotIndex] !== null) return { error: 'الفتحة مشغولة بالفعل.' };
+  if (player.field[slotIndex] !== null) return { error: 'الفتحة مشغولة بالفعل.' };
 
   const cardIndex = player.hand.findIndex(c => c.id === cardId);
   if (cardIndex === -1) return { error: 'البطاقة ليست في اليد.' };
@@ -209,7 +206,7 @@ function setSpellTrap(state, playerKey, cardId, slotIndex) {
   if (card.type === 'Monster') return { error: 'لا يمكنك وضع وحش هنا!' };
 
   player.hand.splice(cardIndex, 1);
-  player.spellTrapField[slotIndex] = { ...card, setThisTurn: true, faceUp: false };
+  player.field[slotIndex] = { ...card, setThisTurn: true, faceUp: false };
   state.log.push(`${player.username} وضع ${card.name} مقلوبة.`);
   return { success: true };
 }
@@ -229,7 +226,7 @@ function activateSpell(state, playerKey, cardId, slotIndex = -1) {
   let fromField = false;
 
   if (slotIndex !== -1) {
-    card = player.spellTrapField[slotIndex];
+    card = player.field[slotIndex];
     if (!card) return { error: 'لا توجد بطاقة هنا.' };
     fromField = true;
   } else {
@@ -247,23 +244,23 @@ function activateSpell(state, playerKey, cardId, slotIndex = -1) {
     player.lp = Math.min(8000, player.lp + 1000);
     state.log.push(`${player.username} استعاد 1000 نقطة حياة.`);
   } else if (card.name === "غضب التنين") {
-    player.field.forEach(m => { if (m) m.atk += 500; });
+    player.field.forEach(m => { if (m && m.type === 'Monster') m.atk += 500; });
     state.log.push("زادت قوة هجوم جميع وحوشك بمقدار 500.");
   } else if (card.name === "درع الكريستال") {
-    player.field.forEach(m => { if (m) m.currentHP = m.hp; });
+    player.field.forEach(m => { if (m && m.type === 'Monster') m.currentHP = m.hp; });
     state.log.push("تمت استعادة نقاط حياة جميع وحوشك.");
   } else if (card.name === "ثقب أسود") {
-    state.player1.field = Array(5).fill(null);
-    state.player2.field = Array(5).fill(null);
+    state.player1.field = state.player1.field.map(c => (c && c.type === 'Monster') ? null : c);
+    state.player2.field = state.player2.field.map(c => (c && c.type === 'Monster') ? null : c);
     state.log.push("تم تدمير جميع الوحوش في الساحة!");
   } else if (card.name === "إعصار مدمر") {
-    opponent.spellTrapField = Array(5).fill(null);
+    opponent.field = opponent.field.map(c => (c && (c.type === 'Spell' || c.type === 'Trap')) ? null : c);
     state.log.push("تم تدمير جميع أوراق فخ وسحر الخصم.");
   }
 
   // Remove spell after use
   if (fromField) {
-    player.spellTrapField[slotIndex] = null;
+    player.field[slotIndex] = null;
   } else {
     const freshIdx = player.hand.findIndex(c => c.id === cardId);
     if (freshIdx !== -1) player.hand.splice(freshIdx, 1);
