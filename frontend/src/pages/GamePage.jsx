@@ -157,7 +157,18 @@ function GameBoard() {
         setTributeIndices(prev => prev.filter(i => i !== slotIdx));
       } else {
         if (tributeIndices.length < tributeNeeded) {
-          setTributeIndices(prev => [...prev, slotIdx]);
+          const newIndices = [...tributeIndices, slotIdx];
+          setTributeIndices(newIndices);
+          
+          // Auto-summon if we have enough tributes
+          if (newIndices.length === tributeNeeded) {
+            summonMonster(selectedHandCard, targetSlot, newIndices);
+            setSelectedHandCard(null);
+            setSelectedHandIndex(null);
+            setTributeNeeded(0);
+            setTributeIndices([]);
+            setTargetSlot(null);
+          }
         }
       }
       return;
@@ -207,11 +218,19 @@ function GameBoard() {
 
     // Level-based tribute check
     const tributesRequired = card.level >= 7 ? 2 : (card.level >= 5 ? 1 : 0);
-    if (tributesRequired > 0 && tributeIndices.length < tributesRequired) {
-      setTributeNeeded(tributesRequired);
-      setTargetSlot(slotIdx);
-      triggerLocalError(`هذا الوحش يحتاج إلى التضحية بـ ${tributesRequired} وحوش. اخترهم الآن.`);
-      return;
+    const monstersOnField = myState.field.filter(s => s !== null).length;
+
+    if (tributesRequired > 0) {
+      if (monstersOnField < tributesRequired) {
+        triggerLocalError(`لا تملك وحوشاً كافية للتضحية! تحتاج إلى ${tributesRequired}.`);
+        return;
+      }
+      if (tributeIndices.length < tributesRequired) {
+        setTributeNeeded(tributesRequired);
+        setTargetSlot(slotIdx);
+        // Hint is now shown in the banner
+        return;
+      }
     }
 
     summonMonster(selectedHandCard, slotIdx, tributeIndices);
@@ -324,6 +343,25 @@ function GameBoard() {
               <p className="detail-effect">{detailCard.effect || 'لا يوجد تأثير خاص.'}</p>
               <button className="btn btn-gold btn-sm" onClick={() => setDetailCard(null)}>إغلاق</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tribute Selection Banner */}
+      {tributeNeeded > 0 && (
+        <div className="tribute-banner">
+          <div className="tribute-content">
+            <span className="tribute-text">
+              ⚠️ إختر <b>{tributeNeeded - tributeIndices.length}</b> وحوش أخرى للتضحية بها لاستدعاء الوحش القادم.
+            </span>
+            <button className="btn btn-sm btn-outline" style={{ marginLeft: '15px', borderColor: 'rgba(255,255,255,0.3)', color: 'white' }} 
+              onClick={() => {
+                setTributeNeeded(0);
+                setTributeIndices([]);
+                setTargetSlot(null);
+              }}>
+              إلغاء التضحية
+            </button>
           </div>
         </div>
       )}
