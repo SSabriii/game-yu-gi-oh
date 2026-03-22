@@ -36,7 +36,7 @@ export default function LobbyPage() {
 
   async function handleJoinRoom() {
     const rid = joinRoomId.trim().toUpperCase();
-    if (!rid) { setJoinError('Enter a room ID.'); return; }
+    if (!rid) { setJoinError('يرجى إدخال معرف الغرفة.'); return; }
     setJoinError('');
     setJoinLoading(true);
     try {
@@ -166,7 +166,7 @@ export default function LobbyPage() {
                 id="join-room-input"
                 className="form-input"
                 type="text"
-                placeholder="A1B2C3D4"
+                placeholder="أدخل الرمز هنا"
                 value={joinRoomId}
                 onChange={e => setJoinRoomId(e.target.value.toUpperCase())}
                 onKeyDown={e => e.key === 'Enter' && handleJoinRoom()}

@@ -313,25 +313,66 @@ body {
   gap: 10px;
 }
 
-.slot-picker {
-  background: rgba(255,255,255,0.05);
-  padding: 12px;
-  border-radius: 12px;
+.visual-slot-picker {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
 }
 
-.slot-picker span { font-size: 0.75rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
-
-.mini-slots { display: flex; gap: 8px; flex-wrap: wrap; }
-.mini-slots button {
-  flex: 1; min-width: 40px; height: 36px; border-radius: 6px; border: 1px solid var(--glass-border);
-  background: var(--glass-bg); color: white; cursor: pointer; transition: 0.2s; font-weight: 700;
+.slot-ghost {
+  width: 60px;
+  aspect-ratio: 2/3;
+  border-radius: 6px;
+  border: 2px dashed rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  position: relative;
+  overflow: hidden;
 }
-.mini-slots button.taken { opacity: 0.3; border-color: transparent; }
-.mini-slots button.free:hover { border-color: var(--neon-gold); background: rgba(255,204,0,0.1); }
-.mini-slots button:disabled { cursor: not-allowed; }
+
+.slot-ghost.free:hover {
+  border-color: var(--neon-gold);
+  background: rgba(255,204,0,0.1);
+  transform: translateY(-5px) scale(1.1);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+.slot-ghost.taken {
+  border-style: solid;
+  border-color: var(--glass-border);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.slot-ghost img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.plus-icon {
+  font-size: 1.5rem;
+  color: var(--neon-gold);
+  font-weight: 300;
+  opacity: 0.5;
+}
+
+.slot-ghost.free:hover .plus-icon {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+@media (max-width: 768px) {
+  .slot-ghost { width: 45px; }
+  .visual-slot-picker { gap: 6px; padding: 10px; }
+}
 
 /* --- Card Face (Authentic) --- */
 /* --- UI Layer --- */
@@ -610,36 +651,81 @@ body {
   border: 2px solid var(--gold);
   border-radius: 4px;
   overflow: hidden;
+  position: relative;
 }
 .mini-art { flex: 1; background-size: cover; background-position: center; }
-.mini-stats { background: rgba(0,0,0,0.8); color: var(--neon-gold); font-size: 0.6rem; font-weight: 900; text-align: center; padding: 2px 0; }
+.mini-stats { background: rgba(0,0,0,0.85); color: var(--neon-gold); font-size: 0.7rem; font-weight: 900; text-align: center; padding: 3px 0; border-top: 1px solid var(--gold-dark); }
 
-.attacker-active { border-color: var(--neon-gold); box-shadow: 0 0 20px var(--neon-gold); transform: scale(1.05); }
-.attack-target { border-color: #f32; box-shadow: 0 0 20px #f32; cursor: crosshair; }
+/* Monster HP Bar */
+.mini-hp-bar {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  height: 4px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 2px;
+  overflow: hidden;
+  border: 0.5px solid rgba(255,255,255,0.2);
+}
+.hp-fill {
+  height: 100%;
+  background: linear-gradient(to left, #00ff00, #ffcc00);
+  transition: width 0.5s ease-out;
+}
+
+.target-ring {
+  position: absolute;
+  inset: -10px;
+  border: 2px dashed #f32;
+  border-radius: 50%;
+  animation: rotateRing 4s linear infinite, pulseRing 1s infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes rotateRing { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes pulseRing { from { opacity: 0.3; transform: scale(0.9); } to { opacity: 1; transform: scale(1.1); } }
+
+.attacker-active { border-color: var(--neon-gold); box-shadow: 0 0 20px var(--neon-gold); transform: translateY(-5px) scale(1.05); }
+.attack-target { border-color: #f32; box-shadow: 0 0 25px #f32; cursor: crosshair; }
+
+.hand-card-hover-info {
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.8);
+  color: var(--neon-gold);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: 0.2s;
+  pointer-events: none;
+  border: 1px solid var(--neon-gold);
+}
+.hand-card-v2:hover .hand-card-hover-info { opacity: 1; transform: translateX(-50%) translateY(-5px); }
 
 .toast-v2 {
   position: fixed;
-  top: 50%;
+  bottom: 15%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0,0,0,0.9);
-  padding: 20px 40px;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.95);
+  padding: 15px 35px;
   border-radius: 50px;
   border: 2px solid var(--neon-gold);
   color: white;
   z-index: 5000;
   font-weight: 700;
-  animation: slideIn 0.3s ease-out;
+  box-shadow: 0 0 30px rgba(0,0,0,0.8);
+  animation: slideInToast 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
-.toast-v2.error { border-color: #f32; }
+@keyframes slideInToast { from { bottom: 0; opacity: 0; } to { bottom: 15%; opacity: 1; } }
 
-@keyframes slideIn { from { transform: translate(-50%, -30px); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
-
-/* Re-fixing Modal Controls alignment */
-.modal-footer-v2 { margin-top: auto; padding-top: 20px; }
-
-@media (max-width: 768px) {
-  .authentic-card-face-v2 { transform: scale(0.8); }
-  .modal-content-v2 { padding: 10px; }
-  .modal-header-compact { text-align: right; direction: rtl; }
-}
+/* RTL Enhancements */
+.modal-controls { text-align: right; }
+.modal-header-compact h2 { margin-left: auto; margin-right: 0; }
+.card-text-v2 { text-align: right; direction: rtl; }
+.slot-picker span { text-align: right; display: block; width: 100%; }

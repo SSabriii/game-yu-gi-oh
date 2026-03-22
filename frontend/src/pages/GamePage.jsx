@@ -26,20 +26,25 @@ const getCardImage = (card) => {
   return "/assets/cards/fire.png"; // default
 };
 
+const PHASE_NAMES = {
+  draw: "مرحلة السحب",
+  main: "المرحلة الرئيسية",
+  battle: "مرحلة القتال",
+  end: "مرحلة النهاية"
+};
+
 function GameBoard() {
   const navigate = useNavigate();
   const {
-    gameState, status, error,
+    gameState, error,
     myState, oppState, isMyTurn, phase,
-    drawCard, summonMonster, setSpellTrap, activateSpell, goToBattle, attackMonster, directAttack, endTurn,
+    drawCard, summonMonster, setSpellTrap, activateSpell, goToBattle, attackMonster, endTurn,
   } = useGame();
 
   const [selectedCard, setSelectedCard] = useState(null); // The card being inspected in modal
   const [selectedCardSource, setSelectedCardSource] = useState(null); // 'hand' or 'field'
   const [selectedCardIndex, setSelectedCardIndex] = useState(null);
   
-  const [tributeNeeded, setTributeNeeded] = useState(0);
-  const [tributeIndices, setTributeIndices] = useState([]);
   const [attackMode, setAttackMode] = useState(false);
   const [attackerSlot, setAttackerSlot] = useState(null);
   const [localError, setLocalError] = useState(null);
@@ -70,7 +75,7 @@ function GameBoard() {
 
   const handleSummon = (index) => {
     // Logic for summoning from modal
-    summonMonster(selectedCard.id, index, []);
+    summonMonster(selectedCard.id, index);
     closeInspector();
   };
 
@@ -98,11 +103,11 @@ function GameBoard() {
   if (!gameState || !myState || !oppState) return (
     <div className="loading-screen">
        <div className="loading-content">
-          <h1>LOADING DUEL</h1>
+          <h1>جاري تحميل النزال</h1>
           <div className="loading-bar">
              <div className="loading-progress" />
           </div>
-          <p>Preparing the Arena...</p>
+          <p>جاري تجهيز ساحة المعركة...</p>
        </div>
     </div>
   );
@@ -112,7 +117,7 @@ function GameBoard() {
   const myLP = myState.lp;
 
   return (
-    <div className="cinematic-game-root">
+    <div className="cinematic-game-root" dir="rtl">
       {/* Background Arena Layer */}
       <div className="arena-layer">
         <div className="field-grid-3d">
@@ -122,6 +127,7 @@ function GameBoard() {
               {oppState.field.map((m, i) => (
                 <div key={i} className={`field-slot-v2 ${attackMode ? 'attack-target' : ''}`} onClick={() => attackMode ? executeAttack(i) : handleInspectField(m, i, true)}>
                   {m ? <FieldCard card={m} /> : <div className="slot-empty" />}
+                  {attackMode && <div className="target-ring" />}
                 </div>
               ))}
             </div>
@@ -165,7 +171,7 @@ function GameBoard() {
                <div className="lp-val">{oppLP}</div>
             </div>
             <div className="phase-indicator">
-               {phase.toUpperCase()}
+               {PHASE_NAMES[phase] || phase}
             </div>
             <div className="lp-display player">
                <span className="name">{myState.username}</span>
@@ -176,13 +182,13 @@ function GameBoard() {
          {/* Floating Actions */}
          <div className="side-actions">
             {isMyTurn && phase === 'draw' && (
-              <button className="btn-cinematic gold pulse" onClick={drawCard}>DRAW</button>
+              <button className="btn-cinematic gold pulse" onClick={drawCard}>سحب</button>
             )}
             {isMyTurn && phase === 'main' && (
-              <button className="btn-cinematic danger" onClick={goToBattle}>BATTLE</button>
+              <button className="btn-cinematic danger" onClick={goToBattle}>قتال</button>
             )}
             {isMyTurn && phase !== 'draw' && (
-              <button className="btn-cinematic outline" onClick={endTurn}>END</button>
+              <button className="btn-cinematic outline" onClick={endTurn}>إنهاء</button>
             )}
          </div>
 
@@ -191,6 +197,7 @@ function GameBoard() {
             {myState.hand.map((c, i) => (
                <div key={i} className="hand-card-v2" onClick={() => handleInspectHand(c, i)}>
                   <img src={getCardImage(c)} alt={c.name} />
+                  <div className="hand-card-hover-info">{c.name}</div>
                </div>
             ))}
          </div>
@@ -214,15 +221,15 @@ function GameBoard() {
       )}
 
       {/* Error Overlay */}
-      {localError && <div className="toast-v2">{localError}</div>}
-      {error && <div className="toast-v2 error">{error}</div>}
+      {(localError || error) && <div className="toast-v2">{localError || error}</div>}
 
       {/* Winner Overlay */}
       {winner && (
         <div className="victory-overlay">
           <div className="victory-card">
-            <h1>{winner === myState.username ? 'VICTORY' : 'DEFEAT'}</h1>
-            <button className="btn-cinematic gold" onClick={() => navigate('/lobby')}>LOBBY</button>
+            <h1>{winner === myState.username ? 'انتصار باهر!' : 'هزيمة نكراء'}</h1>
+            <p>{winner === myState.username ? 'لقد سحقت خصمك بجدارة' : 'لقد كانت معركة صعبة'}</p>
+            <button className="btn-cinematic gold" onClick={() => navigate('/lobby')}>العودة للردهة</button>
           </div>
         </div>
       )}
@@ -231,10 +238,18 @@ function GameBoard() {
 }
 
 function FieldCard({ card }) {
+  const hpPercent = card.currentHP ? (card.currentHP / card.hp) * 100 : 0;
   return (
     <div className={`mini-card-v2 type-${card.type.toLowerCase()}`}>
       <div className="mini-art" style={{ backgroundImage: `url(${getCardImage(card)})` }} />
-      <div className="mini-stats">{card.atk} / {card.def}</div>
+      {card.type === 'Monster' && (
+        <div className="mini-hp-bar">
+          <div className="hp-fill" style={{ width: `${hpPercent}%` }} />
+        </div>
+      )}
+      <div className="mini-stats">
+        {card.type === 'Monster' ? `${card.atk} / ${card.currentHP || card.hp}` : card.name}
+      </div>
     </div>
   );
 }
@@ -244,7 +259,7 @@ function CardInspectorModal({ card, source, index, isMyTurn, phase, onClose, onS
   const imgUrl = getCardImage(card);
 
   return (
-    <div className="modal-backdrop-v2" onClick={onClose}>
+    <div className="modal-backdrop-v2" onClick={onClose} dir="rtl">
       <div className="modal-content-v2" onClick={e => e.stopPropagation()}>
          <div className="modal-card-display">
             <CardFace card={card} imgUrl={imgUrl} isMonster={isMonster} isLarge />
@@ -260,20 +275,32 @@ function CardInspectorModal({ card, source, index, isMyTurn, phase, onClose, onS
                   <div className="action-group-v2">
                      {isMonster && canSummon && (
                         <div className="slot-picker">
-                           <span>Summon to:</span>
-                           <div className="mini-slots">
+                           <span>ضع الوحش في الساحة:</span>
+                           <div className="visual-slot-picker">
                               {[0,1,2,3,4].map(i => (
-                                 <button key={i} className={field[i] ? 'taken' : 'free'} disabled={field[i] !== null} onClick={() => onSummon(i)}>{i+1}</button>
+                                 <div 
+                                    key={i} 
+                                    className={`slot-ghost ${field[i] ? 'taken' : 'free'}`}
+                                    onClick={() => !field[i] && onSummon(i)}
+                                 >
+                                    {field[i] ? <img src={getCardImage(field[i])} alt="slot" /> : <div className="plus-icon">+</div>}
+                                 </div>
                               ))}
                            </div>
                         </div>
                      )}
                      {!isMonster && (
                         <div className="slot-picker">
-                           <span>Set to:</span>
-                           <div className="mini-slots">
+                           <span>ضع البطاقة في الساحة:</span>
+                           <div className="visual-slot-picker">
                               {[0,1,2,3,4].map(i => (
-                                 <button key={i} onClick={() => onActivate(i)}>{i+1}</button>
+                                 <div 
+                                    key={i} 
+                                    className="slot-ghost free"
+                                    onClick={() => onActivate(i)}
+                                 >
+                                    <div className="plus-icon">+</div>
+                                 </div>
                               ))}
                            </div>
                         </div>
@@ -282,14 +309,14 @@ function CardInspectorModal({ card, source, index, isMyTurn, phase, onClose, onS
                )}
 
                {source === 'myField' && isMyTurn && phase === 'battle' && isMonster && (
-                  <button className="btn-cinematic danger pulse" onClick={() => onAttack(index)}>CHOOSE TO ATTACK</button>
+                  <button className="btn-cinematic danger pulse" onClick={() => onAttack(index)}>الهجوم بهذا الوحش</button>
                )}
             </div>
 
-            <p className="description">{card.effect || "No special effect."}</p>
+            <p className="description">{card.effect || "لا توجد قدرة خاصة."}</p>
             
             <div className="modal-footer-v2">
-               <button className="btn-cinematic outline" style={{ width: '100%' }} onClick={onClose}>CLOSE</button>
+               <button className="btn-cinematic outline" style={{ width: '100%' }} onClick={onClose}>إغلاق</button>
             </div>
          </div>
       </div>
@@ -299,17 +326,28 @@ function CardInspectorModal({ card, source, index, isMyTurn, phase, onClose, onS
 
 /* Reusing your CardFace for consistency but inside the new Modal */
 function CardFace({ card, imgUrl, isMonster, isLarge }) {
+  const typeMap = {
+     Monster: "وحش",
+     Spell: "سحر",
+     Trap: "فخ"
+  };
+
   return (
-    <div className={`authentic-card-face-v2 ${isLarge ? 'large' : ''} type-${card.type.toLowerCase()}`}>
+    <div className={`authentic-card-face-v2 ${isLarge ? 'large' : ''} type-${card.type.toLowerCase()}`} dir="rtl">
       <div className="card-header-v2">
         <span className="card-name-v2">{card.name}</span>
-        <span className="card-attr">{isMonster ? 'DARK' : card.type}</span>
+        <span className="card-attr">{isMonster ? 'ظلام' : typeMap[card.type]}</span>
       </div>
       <div className="card-art-v2" style={{ backgroundImage: `url(${imgUrl})` }} />
       <div className="card-desc-box-v2">
-        <div className="card-type-v2">[{isMonster ? 'Fiend / Effect' : card.type}]</div>
-        <div className="card-text-v2">{card.effect || "This card has no additional effects."}</div>
-        {isMonster && <div className="card-atkdef-v2">ATK / {card.atk} DEF / {card.def}</div>}
+        <div className="card-type-v2">[{isMonster ? 'محارب / ميزة' : typeMap[card.type]}]</div>
+        <div className="card-text-v2">{card.effect || "هذه البطاقة لا تملك قدرات إضافية."}</div>
+        {isMonster && (
+          <div className="card-atkdef-v2">
+            هجوم / {card.atk} <br/> 
+            حياة / {card.currentHP || card.hp}
+          </div>
+        )}
       </div>
     </div>
   );

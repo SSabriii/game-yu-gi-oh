@@ -3,6 +3,7 @@ const { createDeck } = require('./cards');
 const STARTING_LP = 8000;
 const HAND_SIZE = 5;
 const FIELD_SLOTS = 5;
+const MAX_HAND = 7;
 
 /**
  * Create a fresh game state for two players in a room.
@@ -25,7 +26,7 @@ function createGameState(roomId, player1Username, player2Username) {
       spellTrapField: new Array(FIELD_SLOTS).fill(null),
       graveyard: [],
       summonedThisTurn: false,
-      attackedThisTurn: false,
+      attackedMonsterIds: [], // Track which monsters attacked this turn
     },
     player2: {
       username: player2Username,
@@ -36,7 +37,7 @@ function createGameState(roomId, player1Username, player2Username) {
       spellTrapField: new Array(FIELD_SLOTS).fill(null),
       graveyard: [],
       summonedThisTurn: false,
-      attackedThisTurn: false,
+      attackedMonsterIds: [],
     },
     turn: 'player1',
     phase: 'draw',
@@ -50,28 +51,43 @@ function createGameState(roomId, player1Username, player2Username) {
  */
 function drawCard(state, playerKey) {
   const player = state[playerKey];
+  
+  // Rule 13: Deck-out check
   if (player.deck.length === 0) {
-    return { error: 'لا يوجد المزيد من البطاقات في المجموعة!' };
+    state.winner = playerKey === 'player1' ? 'player2' : 'player1';
+    state.log.push(`خسر ${player.username} لنفاد البطاقات!`);
+    return { success: true };
   }
+
   if (state.phase !== 'draw') {
     return { error: 'لست في مرحلة السحب.' };
   }
+
   const card = player.deck.shift();
   player.hand.push(card);
-  state.log.push(`${player.username} سحب ${card.name}.`);
+  state.log.push(`${player.username} سحب بطاقة: ${card.name}.`);
+
+  // Rule 8: Hand limit (7 cards)
+  if (player.hand.length > MAX_HAND) {
+    const removed = player.hand.splice(Math.floor(Math.random() * player.hand.length), 1)[0];
+    state.log.push(`تم حذف ${removed.name} عشوائياً لتجاوز حد اليد (7 بطاقات).`);
+  }
+
   state.phase = 'main';
   return { success: true };
 }
 
 /**
  * Summon a monster from hand to a field slot.
- * Supports Tribute Summoning (Level 5-6: 1 tribute, Level 7+: 2 tributes).
  */
-function summonMonster(state, playerKey, cardId, slotIndex, tributeIndices = []) {
+function summonMonster(state, playerKey, cardId, slotIndex) {
   const player = state[playerKey];
   if (state.turn !== playerKey) return { error: 'ليس دورك.' };
   if (state.phase !== 'main') return { error: 'يمكنك الاستدعاء فقط في المرحلة الرئيسية.' };
+  
+  // Rule 3: 1 Normal Summon per turn
   if (player.summonedThisTurn) return { error: 'لقد استدعيت وحشاً بالفعل في هذا الدور.' };
+  
   if (slotIndex < 0 || slotIndex >= FIELD_SLOTS) return { error: 'فتحة غير صالحة.' };
   if (player.field[slotIndex] !== null) return { error: 'الفتحة مشغولة بالفعل.' };
 
@@ -81,18 +97,12 @@ function summonMonster(state, playerKey, cardId, slotIndex, tributeIndices = [])
 
   if (card.type !== 'Monster') return { error: 'هذا ليس وحشاً!' };
 
-  // Tribute Logic removed
-
   player.hand.splice(cardIndex, 1);
-  player.field[slotIndex] = { ...card, justSummoned: true, position: 'attack' };
+  // Rule 4: Monster contains ATK, DEF, and HP
+  player.field[slotIndex] = { ...card, currentHP: card.hp, justSummoned: true, position: 'attack' };
   player.summonedThisTurn = true;
-  state.log.push(`${player.username} استدعى ${card.name} (هجوم: ${card.atk}, دفاع: ${card.def}) في الفتحة ${slotIndex + 1}.`);
+  state.log.push(`${player.username} استدعى ${card.name} (هجوم: ${card.atk}, حياة: ${card.hp}).`);
   
-  // Basic Auto-Effects (Draw/Heal on summon)
-  if (card.effectType === 'draw_on_summon') {
-    // Note: implementing specific effects later as needed
-  }
-
   return { success: true };
 }
 
@@ -106,7 +116,6 @@ function attackMonster(state, playerKey, attackerSlot, defenderSlot) {
 
   if (state.turn !== playerKey) return { error: 'ليس دورك.' };
   if (state.phase !== 'battle') return { error: 'لست في مرحلة القتال.' };
-  if (attacker.attackedThisTurn) return { error: 'لقد هاجمت بالفعل في هذا الدور.' };
 
   const attackerCard = attacker.field[attackerSlot];
   const defenderCard = defender.field[defenderSlot];
@@ -114,33 +123,48 @@ function attackMonster(state, playerKey, attackerSlot, defenderSlot) {
   if (!attackerCard) return { error: 'لا يوجد وحش في فتحة المهاجم.' };
   if (!defenderCard) return { error: 'لا يوجد وحش في فتحة المدافع.' };
   if (attackerCard.justSummoned) return { error: 'هذا الوحش تم استدعاؤه تواً ولا يمكنه الهجوم.' };
+  
+  // Track attack per monster
+  if (attacker.attackedMonsterIds.includes(attackerCard.id)) return { error: 'هاجم هذا الوحش بالفعل.' };
 
-  const diff = attackerCard.atk - defenderCard.atk;
+  // Rule 5: Combat Calculation
+  // Damage = ATK M مهاجم - DEF or ATK M مدافع
+  const defenderStat = defenderCard.position === 'attack' ? defenderCard.atk : defenderCard.def;
+  const damage = attackerCard.atk - defenderStat;
 
-  if (diff > 0) {
-    // Attacker wins
-    defender.lp -= diff;
-    defender.field[defenderSlot] = null;
-    state.log.push(`وحش ${attacker.username} [${attackerCard.name}] دمر [${defenderCard.name}]! فقد ${defender.username}ـ ${diff} نقطة حياة.`);
-  } else if (diff < 0) {
-    // Defender wins
-    attacker.lp += diff; // diff is negative
-    attacker.field[attackerSlot] = null;
-    state.log.push(`وحش ${attacker.username} [${attackerCard.name}] تدمر بواسطة [${defenderCard.name}]! فقد ${attacker.username}ـ ${Math.abs(diff)} نقطة حياة.`);
+  state.log.push(`${attackerCard.name} يهاجم ${defenderCard.name}.`);
+
+  if (damage > 0) {
+    // Reduce Monster HP
+    defenderCard.currentHP -= damage;
+    state.log.push(`تضرر ${defenderCard.name} بمقدار ${damage} نقاط حياة. المتبقي: ${defenderCard.currentHP}`);
+
+    // If HP <= 0, destroy monster and apply LP damage
+    if (defenderCard.currentHP <= 0) {
+      defender.field[defenderSlot] = null;
+      defender.lp -= damage; // Apply difference to player LP as requested
+      state.log.push(`تم تدمير ${defenderCard.name}! خسر ${defender.username}ـ ${damage} LP.`);
+    }
+  } else if (damage < 0) {
+    // Reflected damage to attacker HP
+    const absorb = Math.abs(damage);
+    attackerCard.currentHP -= absorb;
+    state.log.push(`${attackerCard.name} خسر ${absorb} HP بسبب دفاع الخصم القوي.`);
+    if (attackerCard.currentHP <= 0) {
+      attacker.field[attackerSlot] = null;
+      state.log.push(`تم تدمير ${attackerCard.name}!`);
+    }
   } else {
-    // Tie — both destroyed
-    attacker.field[attackerSlot] = null;
-    defender.field[defenderSlot] = null;
-    state.log.push(`دمر كل من [${attackerCard.name}] و [${defenderCard.name}] بعضهما البعض!`);
+    state.log.push(`تعادل القوى! لم يتأثر أي وحش.`);
   }
 
-  attacker.attackedThisTurn = true;
+  attacker.attackedMonsterIds.push(attackerCard.id);
   checkWin(state);
   return { success: true };
 }
 
 /**
- * Direct attack the opponent (no monsters on their field).
+ * Direct attack the opponent.
  */
 function directAttack(state, playerKey, attackerSlot) {
   const opponentKey = playerKey === 'player1' ? 'player2' : 'player1';
@@ -149,42 +173,32 @@ function directAttack(state, playerKey, attackerSlot) {
 
   if (state.turn !== playerKey) return { error: 'ليس دورك.' };
   if (state.phase !== 'battle') return { error: 'لست في مرحلة القتال.' };
-  if (attacker.attackedThisTurn) return { error: 'لقد هاجمت بالفعل في هذا الدور.' };
 
-  // Check opponent has no monsters
   const opponentHasMonsters = defender.field.some(slot => slot !== null);
-  if (opponentHasMonsters) return { error: 'الخصم لديه وحوش في الساحة. استهدفهم بدلاً من ذلك.' };
+  if (opponentHasMonsters) return { error: 'الخصم لديه وحوش في الساحة.' };
 
   const attackerCard = attacker.field[attackerSlot];
-  if (!attackerCard) return { error: 'لا يوجد وحش في فتحة المهاجم.' };
-  if (attackerCard.justSummoned) return { error: 'هذا الوحش تم استدعاؤه تواً ولا يمكنه الهجوم.' };
+  if (!attackerCard) return { error: 'لا يوجد وحش مهاجم.' };
+  if (attackerCard.justSummoned) return { error: 'هذا الوحش استدعي تواً.' };
+  if (attacker.attackedMonsterIds.includes(attackerCard.id)) return { error: 'هاجم بالفعل.' };
 
+  // Rule 5: Full ATK to LP
   defender.lp -= attackerCard.atk;
-  attacker.attackedThisTurn = true;
-  state.log.push(`وحش ${attacker.username} [${attackerCard.name}] يهاجم مباشرة! فقد ${defender.username}ـ ${attackerCard.atk} نقطة حياة.`);
+  attacker.attackedMonsterIds.push(attackerCard.id);
+  state.log.push(`هاجم ${attackerCard.name} مباشرة! خسر ${defender.username}ـ ${attackerCard.atk} LP.`);
 
   checkWin(state);
   return { success: true };
 }
 
 /**
- * Advance to battle phase (from main).
- */
-function goToBattlePhase(state, playerKey) {
-  if (state.turn !== playerKey) return { error: 'ليس دورك.' };
-  if (state.phase !== 'main') return { error: 'يجب أن تكون في المرحلة الرئيسية.' };
-  state.phase = 'battle';
-  state.log.push(`${state[playerKey].username} يدخل مرحلة القتال.`);
-  return { success: true };
-}
-
-/**
- * Set a Spell or Trap card مقلوباً.
+ * Set a Spell or Trap card Face Down.
  */
 function setSpellTrap(state, playerKey, cardId, slotIndex) {
   const player = state[playerKey];
   if (state.turn !== playerKey) return { error: 'ليس دورك.' };
   if (state.phase !== 'main') return { error: 'المرحلة غير صالحة.' };
+  
   if (slotIndex < 0 || slotIndex >= FIELD_SLOTS) return { error: 'فتحة غير صالحة.' };
   if (player.spellTrapField[slotIndex] !== null) return { error: 'الفتحة مشغولة بالفعل.' };
 
@@ -196,17 +210,17 @@ function setSpellTrap(state, playerKey, cardId, slotIndex) {
 
   player.hand.splice(cardIndex, 1);
   player.spellTrapField[slotIndex] = { ...card, setThisTurn: true, faceUp: false };
-  state.log.push(`${player.username} وضع بطاقة في منطقة السحر/الفخاخ.`);
+  state.log.push(`${player.username} وضع ${card.name} مقلوبة.`);
   return { success: true };
 }
 
 /**
- * Activate a Spell card from hand or field.
+ * Activate a Spell card.
  */
 function activateSpell(state, playerKey, cardId, slotIndex = -1) {
   const player = state[playerKey];
-  const oppKey = playerKey === 'player1' ? 'player2' : 'player1';
-  const opp = state[oppKey];
+  const opponentKey = playerKey === 'player1' ? 'player2' : 'player1';
+  const opponent = state[opponentKey];
 
   if (state.turn !== playerKey) return { error: 'ليس دورك.' };
   if (state.phase !== 'main') return { error: 'المرحلة غير صالحة.' };
@@ -226,67 +240,92 @@ function activateSpell(state, playerKey, cardId, slotIndex = -1) {
 
   if (card.type !== 'Spell') return { error: 'هذه ليست بطاقة سحر!' };
 
-  // Execute Effect
-  switch (card.effectType) {
-    case 'heal_lp':
-      player.lp += card.value;
-      state.log.push(`${player.username} استعاد ${card.value} LP.`);
-      break;
-    case 'draw_cards':
-      for (let i = 0; i < card.value; i++) {
-        if (player.deck.length > 0) {
-          player.hand.push(player.deck.shift());
-        }
-      }
-      state.log.push(`${player.username} سحب ${card.value} بطاقات.`);
-      break;
-    case 'atk_boost_permanent':
-      // This would require selecting a monster, skipping for MVP simplicity or picking strongest
-      const strongest = player.field.filter(s => s).sort((a, b) => b.atk - a.atk)[0];
-      if (strongest) {
-        strongest.atk += card.value;
-        state.log.push(`زاد هجوم ${strongest.name} بمقدار ${card.value}.`);
-      }
-      break;
-    // Add more cases as needed
-    default:
-      state.log.push(`${player.username} فعل ${card.name}، لكن التأثير لم يكتمل بعد.`);
+  state.log.push(`تفعيل بطاقة ${card.name}!`);
+
+  // Basic Spell Effects
+  if (card.name === "نور الشفاء") {
+    player.lp = Math.min(8000, player.lp + 1000);
+    state.log.push(`${player.username} استعاد 1000 نقطة حياة.`);
+  } else if (card.name === "غضب التنين") {
+    player.field.forEach(m => { if (m) m.atk += 500; });
+    state.log.push("زادت قوة هجوم جميع وحوشك بمقدار 500.");
+  } else if (card.name === "درع الكريستال") {
+    player.field.forEach(m => { if (m) m.currentHP = m.hp; });
+    state.log.push("تمت استعادة نقاط حياة جميع وحوشك.");
+  } else if (card.name === "ثقب أسود") {
+    state.player1.field = Array(5).fill(null);
+    state.player2.field = Array(5).fill(null);
+    state.log.push("تم تدمير جميع الوحوش في الساحة!");
+  } else if (card.name === "إعصار مدمر") {
+    opponent.spellTrapField = Array(5).fill(null);
+    state.log.push("تم تدمير جميع أوراق فخ وسحر الخصم.");
   }
 
-  // Cleanup
+  // Remove spell after use
   if (fromField) {
-    player.graveyard.push({ ...card });
     player.spellTrapField[slotIndex] = null;
   } else {
-    const cardIdx = player.hand.findIndex(c => c.id === cardId);
-    player.graveyard.push(player.hand.splice(cardIdx, 1)[0]);
+    const freshIdx = player.hand.findIndex(c => c.id === cardId);
+    if (freshIdx !== -1) player.hand.splice(freshIdx, 1);
   }
-
+  
   return { success: true };
 }
 
 /**
- * End the current player's turn.
+ * Advance phases.
  */
+function goToBattlePhase(state, playerKey) {
+  if (state.turn !== playerKey) return { error: 'ليس دورك.' };
+  if (state.phase !== 'main') return { error: 'يجب أن تكون في المرحلة الرئيسية.' };
+  state.phase = 'battle';
+  state.log.push(`${state[playerKey].username} دخل مرحلة القتال.`);
+  return { success: true };
+}
+
 function endTurn(state, playerKey) {
   if (state.turn !== playerKey) return { error: 'ليس دورك.' };
-  if (state.phase === 'draw') return { error: 'يجب سحب بطاقة أولاً.' };
+  if (state.phase === 'draw') return { error: 'سحب بطاقة أولاً.' };
 
   const opponentKey = playerKey === 'player1' ? 'player2' : 'player1';
 
-  // Reset per-turn flags on current player's field
+  // Reset flags
   const currentPlayer = state[playerKey];
-  currentPlayer.field = currentPlayer.field.map(card =>
-    card ? { ...card, justSummoned: false } : null
-  );
+  currentPlayer.field.forEach(c => { if (c) c.justSummoned = false; });
   currentPlayer.summonedThisTurn = false;
-  currentPlayer.attackedThisTurn = false;
+  currentPlayer.attackedMonsterIds = [];
 
   state.turn = opponentKey;
   state.phase = 'draw';
   state.log.push(`بدأ دور ${state[opponentKey].username}.`);
   return { success: true };
 }
+
+/**
+ * Rule 13: Winners
+ */
+function checkWin(state) {
+  if (state.player1.lp <= 0) {
+    state.winner = 'player2';
+    state.log.push(`انتصر ${state.player2.username}!`);
+  } else if (state.player2.lp <= 0) {
+    state.winner = 'player1';
+    state.log.push(`انتصر ${state.player1.username}!`);
+  }
+}
+
+module.exports = {
+  createGameState,
+  drawCard,
+  summonMonster,
+  setSpellTrap,
+  activateSpell,
+  attackMonster,
+  directAttack,
+  goToBattlePhase,
+  endTurn,
+  checkWin,
+};
 
 /**
  * Check for a winner and update state.winner.
