@@ -742,29 +742,6 @@ h1, h2, h3 { font-family: 'Cinzel', serif; }
 }
 .st-card.back::after { content: '🂠'; font-size: 1.5rem; }
 
-.tribute-target {
-  cursor: pointer;
-  border-color: #ff8000 !important;
-  animation: tributePulse 1.5s infinite;
-}
-
-.tribute-selected {
-  border-color: #ff4000 !important;
-  box-shadow: 0 0 20px #ff400088;
-  transform: scale(1.05);
-}
-
-@keyframes tributePulse {
-  0%, 100% { box-shadow: 0 0 5px #ff800044; }
-  50% { box-shadow: 0 0 15px #ff8000aa; }
-}
-
-.card-level-stars {
-  color: #ffd700;
-  font-size: 0.6rem;
-  margin-top: 2px;
-  letter-spacing: -1px;
-}
 
 .card-stats-row {
   display: flex;
@@ -792,56 +769,6 @@ h1, h2, h3 { font-family: 'Cinzel', serif; }
   cursor: default;
 }
 
-/* Tribute Summoning UI */
-.tribute-banner {
-  position: fixed;
-  top: 60px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  background: rgba(139, 0, 0, 0.9);
-  color: white;
-  padding: 10px 20px;
-  border-radius: 30px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5), 0 0 10px rgba(255,215,0,0.3);
-  border: 1px solid rgba(255,215,0,0.5);
-  display: flex;
-  align-items: center;
-  backdrop-filter: blur(5px);
-  animation: slideDown 0.3s ease-out;
-}
-
-.tribute-content {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.tribute-text {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.tribute-target {
-  cursor: pointer;
-}
-
-.tribute-target.has-monster {
-  box-shadow: 0 0 15px rgba(255, 64, 64, 0.6) inset;
-  border-color: #ff4040 !important;
-}
-
-.tribute-selected {
-  border-color: #ffd700 !important;
-  box-shadow: 0 0 20px #ffd700, 0 0 10px #ffd700 inset !important;
-  transform: scale(0.95);
-  filter: brightness(1.2);
-}
-
-@keyframes slideDown {
-  from { top: -50px; opacity: 0; }
-  to { top: 60px; opacity: 1; }
-}
 
 .field-slot-number {
   font-size: 0.6rem;
@@ -1117,7 +1044,6 @@ h1, h2, h3 { font-family: 'Cinzel', serif; }
   
   .card-name-label { font-size: 0.35rem; padding: 0 1px; }
   .card-stats-row { font-size: 0.4rem; gap: 1px; padding: 0 2px; margin-top: 1px; }
-  .card-level-stars { font-size: 0.35rem; letter-spacing: -2px; margin-top: 0; }
   .just-summoned-badge { font-size: 0.35rem; padding: 0 2px; }
   
   /* Divider */

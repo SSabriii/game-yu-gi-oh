@@ -81,24 +81,7 @@ function summonMonster(state, playerKey, cardId, slotIndex, tributeIndices = [])
 
   if (card.type !== 'Monster') return { error: 'هذا ليس وحشاً!' };
 
-  // Tribute Logic
-  const tributesRequired = card.level >= 7 ? 2 : (card.level >= 5 ? 1 : 0);
-  if (tributesRequired > 0) {
-    if (tributeIndices.length !== tributesRequired) {
-      return { error: `هذا الوحش يحتاج إلى ${tributesRequired} أوراق تضحية.`, needsTribute: tributesRequired };
-    }
-    // Verify tributes are valid monsters on field
-    for (const idx of tributeIndices) {
-      if (!player.field[idx]) return { error: 'إحدى فتحات التضحية فارغة.' };
-    }
-    // Perform tribute
-    for (const idx of tributeIndices) {
-      const tCard = player.field[idx];
-      player.graveyard.push(tCard);
-      player.field[idx] = null;
-    }
-    state.log.push(`${player.username} ضحى بـ ${tributeIndices.length} وحوش لاستدعاء ${card.name}.`);
-  }
+  // Tribute Logic removed
 
   player.hand.splice(cardIndex, 1);
   player.field[slotIndex] = { ...card, justSummoned: true, position: 'attack' };

@@ -216,22 +216,7 @@ function GameBoard() {
       return;
     }
 
-    // Level-based tribute check
-    const tributesRequired = card.level >= 7 ? 2 : (card.level >= 5 ? 1 : 0);
-    const monstersOnField = myState.field.filter(s => s !== null).length;
-
-    if (tributesRequired > 0) {
-      if (monstersOnField < tributesRequired) {
-        triggerLocalError(`لا تملك وحوشاً كافية للتضحية! تحتاج إلى ${tributesRequired}.`);
-        return;
-      }
-      if (tributeIndices.length < tributesRequired) {
-        setTributeNeeded(tributesRequired);
-        setTargetSlot(slotIdx);
-        // Hint is now shown in the banner
-        return;
-      }
-    }
+    // Level-based tribute check removed
 
     summonMonster(selectedHandCard, slotIdx, tributeIndices);
     setSelectedHandCard(null);
@@ -331,7 +316,6 @@ function GameBoard() {
                 <h3>{detailCard.name}</h3>
                 {detailCard.type === 'Monster' && (
                   <div className="detail-stats">
-                    <span>⭐ {detailCard.level}</span>
                     <span>⚔ {detailCard.atk}</span>
                     <span>🛡 {detailCard.def}</span>
                   </div>
@@ -347,24 +331,6 @@ function GameBoard() {
         </div>
       )}
 
-      {/* Tribute Selection Banner */}
-      {tributeNeeded > 0 && (
-        <div className="tribute-banner">
-          <div className="tribute-content">
-            <span className="tribute-text">
-              ⚠️ إختر <b>{tributeNeeded - tributeIndices.length}</b> وحوش أخرى للتضحية بها لاستدعاء الوحش القادم.
-            </span>
-            <button className="btn btn-sm btn-outline" style={{ marginLeft: '15px', borderColor: 'rgba(255,255,255,0.3)', color: 'white' }} 
-              onClick={() => {
-                setTributeNeeded(0);
-                setTributeIndices([]);
-                setTargetSlot(null);
-              }}>
-              إلغاء التضحية
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Top Bar */}
       <div className="phase-banner">
@@ -630,7 +596,6 @@ function MonsterHandCard({ card, selected, disabled, onClick }) {
         <div className="card-name-label">{card.name}</div>
         {isMonster ? (
           <>
-            <div className="card-level-stars">{'⭐'.repeat(card.level)}</div>
             <div className="card-stats-row">
               <span>⚔ {card.atk}</span>
               <span>🛡 {card.def}</span>
@@ -671,7 +636,6 @@ function FieldMonsterCard({ monster, isOpponent, canAttack, isSelected, onShowDe
           <span>⚔ {monster.atk}</span>
           <span>🛡 {monster.def}</span>
         </div>
-        <div className="card-level-stars" style={{ fontSize: '0.6rem' }}>{'⭐'.repeat(monster.level)}</div>
       </div>
     </div>
   );
