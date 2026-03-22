@@ -240,18 +240,20 @@ function CardInspectorModal({ card, source, index, isMyTurn, phase, onClose, onS
             <CardFace card={card} imgUrl={imgUrl} isMonster={isMonster} isLarge />
          </div>
          <div className="modal-controls">
-            <h2>{card.name}</h2>
-            <p className="description">{card.effect || "No special effect."}</p>
+            <div className="modal-header-compact">
+               <h2>{card.name}</h2>
+               <button className="btn-close-v2" onClick={onClose}>×</button>
+            </div>
             
             <div className="modal-actions-v2">
                {source === 'hand' && isMyTurn && phase === 'main' && (
-                  <>
+                  <div className="action-group-v2">
                      {isMonster && canSummon && (
                         <div className="slot-picker">
                            <span>Summon to:</span>
                            <div className="mini-slots">
                               {[0,1,2,3,4].map(i => (
-                                 <button key={i} disabled={field[i] !== null} onClick={() => onSummon(i)}>{i+1}</button>
+                                 <button key={i} className={field[i] ? 'taken' : 'free'} disabled={field[i] !== null} onClick={() => onSummon(i)}>{i+1}</button>
                               ))}
                            </div>
                         </div>
@@ -266,14 +268,18 @@ function CardInspectorModal({ card, source, index, isMyTurn, phase, onClose, onS
                            </div>
                         </div>
                      )}
-                  </>
+                  </div>
                )}
 
                {source === 'myField' && isMyTurn && phase === 'battle' && isMonster && (
-                  <button className="btn-cinematic danger big" onClick={() => onAttack(index)}>SELECT TO ATTACK</button>
+                  <button className="btn-cinematic danger pulse" onClick={() => onAttack(index)}>CHOOSE TO ATTACK</button>
                )}
-               
-               <button className="btn-cinematic outline" onClick={onClose}>CLOSE</button>
+            </div>
+
+            <p className="description">{card.effect || "No special effect."}</p>
+            
+            <div className="modal-footer-v2">
+               <button className="btn-cinematic outline" style={{ width: '100%' }} onClick={onClose}>CLOSE</button>
             </div>
          </div>
       </div>

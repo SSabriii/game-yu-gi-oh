@@ -78,6 +78,7 @@ body {
   position: relative;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   background: #000;
   overflow: hidden;
 }
@@ -88,27 +89,30 @@ body {
   inset: 0;
   z-index: 1;
   background: radial-gradient(circle at center, #151535 0%, #050510 100%);
-  perspective: 1500px;
+  perspective: 1200px;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .field-grid-3d {
   width: 100%;
   max-width: 1000px;
-  height: 90vh;
-  transform: rotateX(30deg) translateY(-50px);
+  height: auto;
+  min-height: 80vh;
+  transform: rotateX(20deg);
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;
+  justify-content: center;
+  gap: 15px;
   padding: 20px;
 }
 
 .field-side {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .slots-row {
@@ -119,63 +123,73 @@ body {
 
 .field-slot-v2 {
   aspect-ratio: 2/3;
-  width: clamp(40px, 11vw, 100px);
+  width: clamp(36px, 12vw, 110px);
   background: rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 4px;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   position: relative;
   cursor: pointer;
 }
 
-.field-slot-v2:hover { border-color: var(--neon-blue); background: rgba(0, 229, 255, 0.05); }
+.field-slot-v2:hover { border-color: var(--neon-blue); background: rgba(0, 229, 255, 0.1); }
 
-.attack-target { border-color: #ff3232; animation: targetPulse 1s infinite alternate; }
-@keyframes targetPulse { from { box-shadow: 0 0 5px #ff3232; } to { box-shadow: 0 0 20px #ff3232; } }
-
-.attacker-active { border-color: var(--neon-gold); box-shadow: var(--shadow-gold); }
-
-.slot-empty { width: 100%; height: 100%; }
-
-.mini-card-v2 {
+.modal-header-compact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   width: 100%;
-  height: 100%;
-  border-radius: 2px;
-  overflow: hidden;
-  position: relative;
-  border: 1px solid rgba(0,0,0,0.5);
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 10px;
 }
 
-.mini-art { width: 100%; height: 100%; background-size: cover; background-position: center; }
+.btn-close-v2 {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 5px;
+  opacity: 0.6;
+}
+.btn-close-v2:hover { opacity: 1; color: var(--neon-blue); }
 
-.mini-stats {
-  position: absolute;
-  bottom: 0;
+.modal-actions-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   width: 100%;
-  background: rgba(0,0,0,0.85);
-  font-size: 0.45rem;
-  text-align: center;
-  padding: 1px 0;
-  font-weight: 900;
-  color: var(--neon-gold);
 }
 
-.card-back-v2 {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #1a1a3a, #0a0a14);
-  border: 1px solid var(--neon-gold);
+.action-group-v2 {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.field-divider-v2 {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--neon-blue), transparent);
-  width: 80%;
-  margin: 5px auto;
-  opacity: 0.2;
+.slot-picker {
+  background: rgba(255,255,255,0.05);
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* --- UI Layer (HUD, Hand, Actions) --- */
+.slot-picker span { font-size: 0.75rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+
+.mini-slots { display: flex; gap: 8px; flex-wrap: wrap; }
+.mini-slots button {
+  flex: 1; min-width: 40px; height: 36px; border-radius: 6px; border: 1px solid var(--glass-border);
+  background: var(--glass-bg); color: white; cursor: pointer; transition: 0.2s; font-weight: 700;
+}
+.mini-slots button.taken { opacity: 0.3; border-color: transparent; }
+.mini-slots button.free:hover { border-color: var(--neon-gold); background: rgba(255,204,0,0.1); }
+.mini-slots button:disabled { cursor: not-allowed; }
+
+/* --- Card Face (Authentic) --- */
+/* --- UI Layer --- */
 .ui-layer {
   position: absolute;
   inset: 0;
@@ -184,7 +198,7 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 15px;
+  padding: env(safe-area-inset-top, 15px) 15px env(safe-area-inset-bottom, 15px);
 }
 
 .top-hud {
@@ -192,78 +206,45 @@ body {
   justify-content: space-between;
   align-items: center;
   pointer-events: auto;
+  width: 100%;
 }
 
 .lp-display {
-  background: var(--glass-bg);
+  background: rgba(0,0,0,0.6);
   backdrop-filter: blur(10px);
-  padding: 8px 16px;
-  border-radius: 12px;
+  padding: 6px 14px;
+  border-radius: 10px;
   border: 1px solid var(--glass-border);
-  min-width: 120px;
-}
-.lp-display.opponent { border-left: 4px solid #ff3232; }
-.lp-display.player { border-right: 4px solid var(--neon-blue); text-align: right; }
-
-.name { font-size: 0.65rem; text-transform: uppercase; color: #aaa; letter-spacing: 1.5px; display: block; }
-.lp-val { font-size: 1.4rem; font-weight: 900; letter-spacing: 1px; }
-
-.phase-indicator {
-  font-family: 'Cinzel', serif;
-  font-weight: 900;
-  color: var(--neon-gold);
-  font-size: 1.2rem;
-  text-shadow: 0 0 10px var(--neon-gold);
-}
-
-.side-actions {
-  position: absolute;
-  right: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  pointer-events: auto;
+  min-width: 100px;
 }
 
 .hand-bar-v2 {
-  height: 100px;
+  height: 90px;
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  gap: 6px;
+  gap: 5px;
   padding-bottom: 5px;
   pointer-events: auto;
 }
 
 .hand-card-v2 {
-  width: clamp(40px, 10vw, 70px);
+  width: clamp(40px, 12vw, 75px);
   aspect-ratio: 2/3;
   border-radius: 3px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.15);
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: transform 0.2s;
   background: #000;
-}
-
-.hand-card-v2 img { width: 100%; height: 100%; object-fit: cover; }
-
-.hand-card-v2:hover {
-  transform: translateY(-25px) scale(1.1);
-  box-shadow: var(--shadow-neon);
-  border-color: var(--neon-blue);
-  z-index: 50;
 }
 
 /* --- Detail Modal (Inspector) --- */
 .modal-backdrop-v2 {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.8);
-  backdrop-filter: blur(15px);
-  z-index: 1000;
+  background: rgba(0,0,0,0.9);
+  backdrop-filter: blur(20px);
+  z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -272,12 +253,15 @@ body {
 
 .modal-content-v2 {
   width: 100%;
-  max-width: 800px;
+  height: 100%;
+  max-width: 900px;
   display: flex;
   gap: 30px;
   align-items: center;
-  animation: modalIn 0.3s ease-out;
+  overflow-y: auto;
+  scrollbar-width: none;
 }
+.modal-content-v2::-webkit-scrollbar { display: none; }
 
 .modal-controls {
   flex: 1;
@@ -287,118 +271,39 @@ body {
 }
 
 .modal-controls h2 { font-size: 2rem; color: var(--neon-gold); font-family: 'Cinzel', serif; }
-.description { font-size: 0.95rem; line-height: 1.5; color: #ddd; }
-
-.modal-actions-v2 {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 10px;
-}
-
-.slot-picker {
-  background: rgba(255,255,255,0.03);
-  padding: 12px;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.slot-picker span { font-size: 0.75rem; color: #aaa; text-transform: uppercase; }
-
-.mini-slots { display: flex; gap: 8px; }
-.mini-slots button {
-  flex: 1; height: 36px; border-radius: 4px; border: 1px solid var(--glass-border);
-  background: var(--glass-bg); color: white; cursor: pointer; transition: 0.2s;
-}
-.mini-slots button:hover:not(:disabled) { border-color: var(--neon-blue); background: rgba(0,229,255,0.1); }
-.mini-slots button:disabled { opacity: 0.2; cursor: not-allowed; }
-
-/* --- Card Face (Authentic) --- */
-.authentic-card-face-v2 {
-  width: 280px;
-  height: 406px;
-  background: #d4a76a;
-  border: 6px solid #5a3a22;
-  border-radius: 6px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-  color: #111;
-}
-
-.authentic-card-face-v2.type-spell { background: #1d9d73; border-color: #0b4a36; }
-.authentic-card-face-v2.type-trap { background: #bc1e5b; border-color: #5a0e2b; }
-
-.card-header-v2 { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.2); padding-bottom: 2px; }
-.card-name-v2 { font-weight: 900; font-size: 1.1rem; text-transform: uppercase; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.card-attr { font-weight: 900; color: #cc0000; font-size: 0.9rem; }
-
-.card-art-v2 { flex: 1; background-size: cover; background-position: center; border: 2px solid #222; margin: 6px 0; }
-
-.card-desc-box-v2 {
-  background: #f1ebd5;
-  padding: 8px;
-  border: 1px solid #222;
-  min-height: 100px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.card-type-v2 { font-weight: 800; font-size: 0.75rem; border-bottom: 1px solid #333; margin-bottom: 4px; padding-bottom: 2px; }
-.card-text-v2 { font-size: 0.7rem; line-height: 1.2; flex: 1; }
-.card-atkdef-v2 { text-align: right; font-weight: 900; font-size: 0.95rem; border-top: 1px dashed #666; padding-top: 3px; }
-
-/* --- Overlays & Toasts --- */
-.toast-v2 {
-  position: absolute;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,0.9);
-  border: 1px solid var(--neon-blue);
-  color: white;
-  padding: 10px 24px;
-  border-radius: 50px;
-  font-size: 0.85rem;
-  z-index: 2000;
-  box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-  animation: slideDown 0.3s ease-out;
-}
-
-.toast-v2.error { border-color: #ff3232; color: #ff3232; }
-
-.victory-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.95);
-  z-index: 3000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(20px);
-}
-
-.victory-card { text-align: center; }
-.victory-card h1 { font-family: 'Cinzel', serif; font-size: 4rem; font-weight: 900; letter-spacing: 5px; color: var(--neon-gold); text-shadow: 0 0 30px var(--neon-gold); margin-bottom: 30px; }
+.description { font-size: 1rem; line-height: 1.5; color: #eee; }
 
 /* --- Mobile Adaptations --- */
 @media (max-width: 768px) {
-  .field-grid-3d { transform: rotateX(25deg) scale(1) translateY(-20px); gap: 10px; height: 85vh; }
-  .field-slot-v2 { width: clamp(35px, 15vw, 65px); }
-  .modal-content-v2 { flex-direction: column; gap: 15px; }
-  .modal-card-display { transform: scale(0.9); }
-  .modal-controls h2 { font-size: 1.4rem; text-align: center; }
-  .description { font-size: 0.85rem; text-align: center; }
-  .hand-bar-v2 { height: 80px; }
-  .top-hud { padding: 0 5px; }
-  .lp-display { padding: 6px 12px; min-width: 100px; }
+  .field-grid-3d { 
+    transform: rotateX(15deg) translateY(-10px); 
+    gap: 8px; 
+    padding: 10px;
+    width: 100%;
+  }
+
+  .field-slot-v2 { width: clamp(34px, 15vw, 65px); }
+
+  .modal-content-v2 { 
+    flex-direction: column; 
+    justify-content: flex-start;
+    padding-top: 40px;
+    gap: 20px; 
+    text-align: center; 
+  }
+
+  .modal-card-display { flex-shrink: 0; transform: scale(0.85); margin-top: -20px; }
+  .authentic-card-face-v2 { width: 280px; height: 406px; }
+
+  .modal-controls { width: 100%; flex: none; padding-bottom: 40px; }
+  .modal-controls h2 { font-size: 1.5rem; }
+  .description { font-size: 0.9rem; padding: 0 10px; }
+
+  .hand-bar-v2 { height: 75px; }
+  .lp-display { min-width: 80px; padding: 4px 10px; }
   .lp-val { font-size: 1.1rem; }
-  .phase-indicator { font-size: 0.9rem; }
+  .phase-indicator { font-size: 0.85rem; }
 }
 
-@keyframes modalIn { from { transform: scale(0.9) translateY(30px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
-@keyframes slideDown { from { transform: translate(-50%, -40px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+@keyframes modalIn { from { transform: scale(0.95) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+@keyframes slideDown { from { transform: translate(-50%, -30px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
