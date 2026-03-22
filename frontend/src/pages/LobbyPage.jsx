@@ -93,99 +93,97 @@ export default function LobbyPage() {
 
   return (
     <div className="lobby-page">
-      {/* Nav */}
-      <div className="nav-bar" style={{ marginBottom: 40 }}>
+      <div className="auth-bg-orb auth-bg-orb-1" />
+      
+      <div className="nav-bar">
         <div className="nav-logo">{translations.navLogo}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            {translations.loggedInAs} <span className="text-gold" style={{ fontWeight: 700 }}>{username}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+          <span style={{ fontSize: '0.85rem', color: '#aaa', fontWeight: 600 }}>
+            {translations.loggedInAs} <span style={{ color: 'var(--neon-gold)' }}>{username}</span>
           </span>
-          <button id="logout-btn" className="btn btn-outline btn-sm" onClick={handleLogout}>{translations.logout}</button>
+          <button id="logout-btn" className="btn-outline btn-sm" onClick={handleLogout}>{translations.logout}</button>
         </div>
       </div>
 
-      <div className="lobby-header">
-        <h1>{translations.lobbyHeader}</h1>
-        <p style={{ color: 'var(--text-secondary)', marginTop: 12 }}>
-          {translations.lobbySub}
-        </p>
-      </div>
+      <div className="lobby-container">
+        <div className="lobby-header">
+           <h1>{translations.lobbyHeader}</h1>
+           <p>{translations.lobbySub}</p>
+        </div>
 
-      <div className="lobby-actions">
-        {/* Create Room Card */}
-        <div className="lobby-action-card">
-          <h2>{translations.createTitle}</h2>
-          <p>{translations.createSub}</p>
+        <div className="lobby-actions">
+          {/* Create Room Card */}
+          <div className="lobby-action-card">
+            <h2>{translations.createTitle}</h2>
+            <p>{translations.createSub}</p>
 
-          {createError && <div className="alert alert-error">{createError}</div>}
+            {createError && <div className="alert alert-error">{createError}</div>}
 
-          {!createdRoomId ? (
-            <button
-              id="create-room-btn"
-              className="btn btn-gold w-full"
-              onClick={handleCreateRoom}
-              disabled={createLoading}
-              style={{ padding: '14px' }}
-            >
-              {createLoading ? translations.creatingBtn : translations.createBtn}
-            </button>
-          ) : (
-            <>
-              <div className="alert alert-info">
-                {translations.shareId}
-              </div>
-              <div
-                id="room-id-display"
-                className="room-id-display"
-                onClick={handleCopyRoomId}
-                title={translations.copyHint}
-              >
-                <div className="room-id-label">{translations.roomIdLabel} {copied ? translations.copySuccess : translations.copyHint}</div>
-                <div className="room-id-value">{createdRoomId}</div>
-              </div>
+            {!createdRoomId ? (
               <button
-                id="enter-room-btn"
-                className="btn btn-primary w-full"
-                onClick={handleEnterRoom}
-                style={{ padding: '14px' }}
+                id="create-room-btn"
+                className="btn-gold w-full"
+                onClick={handleCreateRoom}
+                disabled={createLoading}
               >
-                {translations.enterRoom}
+                {createLoading ? translations.creatingBtn : translations.createBtn}
               </button>
-            </>
-          )}
-        </div>
-
-        {/* Join Room Card */}
-        <div className="lobby-action-card">
-          <h2>{translations.joinTitle}</h2>
-          <p>{translations.joinSub}</p>
-
-          {joinError && <div className="alert alert-error">{joinError}</div>}
-
-          <div className="form-group">
-            <label className="form-label">{translations.roomIdLabel}</label>
-            <input
-              id="join-room-input"
-              className="form-input"
-              type="text"
-              placeholder="مثلاً A1B2C3D4"
-              value={joinRoomId}
-              onChange={e => setJoinRoomId(e.target.value.toUpperCase())}
-              onKeyDown={e => e.key === 'Enter' && handleJoinRoom()}
-              maxLength={8}
-              style={{ letterSpacing: '4px', fontFamily: 'Cinzel, serif', fontSize: '1.1rem' }}
-            />
+            ) : (
+              <div className="room-setup-v2">
+                <div className="alert alert-info">
+                  {translations.shareId}
+                </div>
+                <div
+                  id="room-id-display"
+                  className="room-id-display"
+                  onClick={handleCopyRoomId}
+                  title={translations.copyHint}
+                >
+                  <div className="room-id-label">{translations.roomIdLabel} {copied ? translations.copySuccess : translations.copyHint}</div>
+                  <div className="room-id-value">{createdRoomId}</div>
+                </div>
+                <button
+                  id="enter-room-btn"
+                  className="btn-primary w-full"
+                  onClick={handleEnterRoom}
+                >
+                  {translations.enterRoom}
+                </button>
+              </div>
+            )}
           </div>
 
-          <button
-            id="join-room-btn"
-            className="btn btn-gold w-full"
-            onClick={handleJoinRoom}
-            disabled={joinLoading}
-            style={{ padding: '14px' }}
-          >
-            {joinLoading ? translations.joiningBtn : translations.joinBtn}
-          </button>
+          {/* Join Room Card */}
+          <div className="lobby-action-card">
+            <h2>{translations.joinTitle}</h2>
+            <p>{translations.joinSub}</p>
+
+            {joinError && <div className="alert alert-error">{joinError}</div>}
+
+            <div className="form-group">
+              <label className="form-label">{translations.roomIdLabel}</label>
+              <input
+                id="join-room-input"
+                className="form-input"
+                type="text"
+                placeholder="A1B2C3D4"
+                value={joinRoomId}
+                onChange={e => setJoinRoomId(e.target.value.toUpperCase())}
+                onKeyDown={e => e.key === 'Enter' && handleJoinRoom()}
+                maxLength={8}
+                style={{ letterSpacing: '4px', textAlign: 'center', fontFamily: 'Cinzel, serif', fontSize: '1.2rem' }}
+              />
+            </div>
+
+            <button
+              id="join-room-btn"
+              className="btn-gold w-full mt-3"
+              onClick={handleJoinRoom}
+              disabled={joinLoading}
+            >
+              {joinLoading ? translations.joiningBtn : translations.joinBtn}
+            </button>
+          </div>
         </div>
       </div>
     </div>

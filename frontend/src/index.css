@@ -29,49 +29,194 @@ body {
 
 /* --- Auth & Lobby --- */
 .auth-page, .lobby-page, .waiting-screen {
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at center, #101030 0%, #050510 100%);
   gap: 20px;
+  position: relative;
+  overflow: hidden;
+  direction: rtl; /* Force RTL for Arabic layout */
 }
 
-.auth-card, .lobby-container {
-  background: var(--glass-bg);
+/* Moving Orbs */
+.auth-bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  opacity: 0.3;
+  animation: orbMove 20s infinite alternate ease-in-out;
+}
+.auth-bg-orb-1 { width: 400px; height: 400px; background: var(--electric-indigo); top: -100px; left: -100px; }
+.auth-bg-orb-2 { width: 500px; height: 500px; background: #200040; bottom: -100px; right: -100px; animation-delay: -5s; }
+
+@keyframes orbMove { 0% { transform: translate(0,0); } 100% { transform: translate(100px, 100px); } }
+
+.auth-container, .lobby-container {
+  z-index: 10;
+  width: 90%;
+  max-width: 450px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.auth-logo { text-align: center; }
+.auth-logo h1 { font-size: 3rem; color: var(--neon-gold); text-shadow: 0 0 20px var(--neon-gold); margin-bottom: 5px; }
+.auth-logo p { font-size: 0.9rem; color: #aaa; text-transform: uppercase; letter-spacing: 2px; }
+
+.auth-card, .lobby-action-card {
+  background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
-  padding: 40px;
+  padding: 30px;
   border-radius: 24px;
-  width: 90%;
-  max-width: 400px;
-  text-align: center;
   box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  transition: transform 0.3s ease;
 }
 
-.btn-cinematic {
-  padding: 12px 24px;
-  border: 1px solid var(--glass-border);
+.auth-tabs {
+  display: flex;
+  background: rgba(0,0,0,0.3);
+  padding: 5px;
   border-radius: 12px;
-  background: var(--glass-bg);
-  color: white;
+  margin-bottom: 25px;
+}
+.auth-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: #888;
   font-weight: 700;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+.auth-tab.active { background: var(--neon-gold); color: #000; box-shadow: 0 0 15px var(--neon-gold); }
+
+/* --- Forms --- */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+  text-align: right; /* RTL Label Alignment */
+}
+
+.form-label {
+  font-size: 0.85rem;
+  color: var(--neon-gold);
   text-transform: uppercase;
   letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.form-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 15px;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+  transition: 0.3s;
+  text-align: right;
+  direction: rtl;
+}
+.form-input:focus { border-color: var(--neon-blue); box-shadow: 0 0 15px rgba(0,229,255,0.2); background: rgba(255,255,255,0.08); }
+
+/* --- Buttons (Cinematic) --- */
+.btn-cinematic, .btn-primary, .btn-gold, .btn-outline {
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: 0.3s;
+  border: 1px solid var(--glass-border);
+  font-family: inherit;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: inherit;
+  gap: 10px;
 }
 
-.btn-cinematic:hover { border-color: var(--neon-blue); box-shadow: var(--shadow-neon); transform: translateY(-2px); }
-.btn-cinematic:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
-.btn-cinematic.gold { background: linear-gradient(135deg, #ffcc00, #ff9900); color: black; border: none; }
-.btn-cinematic.gold:hover { box-shadow: var(--shadow-gold); }
-.btn-cinematic.danger { background: rgba(255, 50, 50, 0.2); border-color: #ff3232; color: #ff3232; }
+.btn-gold { background: linear-gradient(135deg, #ffcc00, #ff9900); color: black; border: none; }
+.btn-gold:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 0 25px var(--neon-gold); }
+
+.btn-primary { background: var(--electric-indigo); color: white; border: none; }
+.btn-primary:hover:not(:disabled) { box-shadow: 0 0 20px var(--electric-indigo); transform: translateY(-2px); }
+
+.btn-outline { background: transparent; border: 1px solid var(--neon-gold); color: var(--neon-gold); }
+.btn-outline:hover:not(:disabled) { background: var(--neon-gold); color: black; }
+
+.w-full { width: 100%; }
+.text-center { text-align: center; }
+.mt-3 { margin-top: 1rem; }
+
+/* --- Lobby Specific --- */
+.nav-bar {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(15px);
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  z-index: 20;
+}
+
+.nav-logo { font-size: 1.2rem; font-weight: 900; color: var(--neon-gold); }
+
+.lobby-header { text-align: center; margin: 30px 0; z-index: 10; }
+.lobby-header h1 { font-size: 2.5rem; color: white; }
+
+.lobby-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 1000px;
+  z-index: 10;
+}
+
+.lobby-action-card h2 { color: var(--neon-gold); margin-bottom: 10px; }
+.lobby-action-card p { color: #aaa; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; }
+
+.alert {
+  padding: 12px 20px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.alert-error { background: rgba(255, 50, 50, 0.1); border: 1px solid #f32; color: #f32; }
+.alert-info { background: rgba(0, 229, 255, 0.1); border: 1px solid var(--neon-blue); color: var(--neon-blue); }
+
+.room-id-display {
+  background: rgba(0,0,0,0.4);
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px dashed var(--neon-gold);
+  text-align: center;
+  margin-bottom: 15px;
+  cursor: pointer;
+}
+.room-id-label { font-size: 0.7rem; color: #888; text-transform: uppercase; margin-bottom: 5px; }
+.room-id-value { font-size: 1.5rem; font-weight: 900; letter-spacing: 5px; color: var(--neon-gold); }
+
+@media (max-width: 768px) {
+  .auth-logo h1 { font-size: 2.2rem; }
+  .lobby-actions { grid-template-columns: 1fr; padding: 0 10px; }
+}
 
 /* --- Cinematic Root --- */
 .cinematic-game-root {

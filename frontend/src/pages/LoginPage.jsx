@@ -45,8 +45,8 @@ export default function LoginPage() {
 
       <div className="auth-container">
         <div className="auth-logo">
-          <h1>⚔ ديول ماسترز</h1>
-          <p>ساحة معركة البطاقات عبر الإنترنت</p>
+           <h1>⚔ ديول ماسترز</h1>
+           <p>ساحة معركة البطاقات عبر الإنترنت</p>
         </div>
 
         <div className="auth-card">
@@ -97,15 +97,14 @@ export default function LoginPage() {
             <button
               id="auth-submit-btn"
               type="submit"
-              className="btn btn-gold w-full"
-              style={{ marginTop: 8, padding: '14px' }}
+              className="btn-gold w-full mt-3"
               disabled={loading}
             >
               {loading ? '...' : tab === 'login' ? '⚔ دخول الساحة' : '✨ إنشاء الحساب'}
             </button>
           </form>
 
-          <p className="text-center mt-3" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+          <p className="text-center mt-3" style={{ fontSize: '0.8rem', color: '#888' }}>
             {tab === 'login'
               ? "ليس لديك حساب؟ انقر على إنشاء حساب أعلاه."
               : 'لديك حساب بالفعل؟ انقر على تسجيل الدخول أعلاه.'}
