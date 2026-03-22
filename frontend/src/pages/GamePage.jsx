@@ -11,6 +11,21 @@ export default function GamePage() {
   );
 }
 
+const getCardImage = (card) => {
+  if (!card) return null;
+  const name = card.name || "";
+  if (name.includes("نار") || name.includes("بركان") || name.includes("شمس")) return "/assets/cards/fire.png";
+  if (name.includes("ثلج") || name.includes("جليد")) return "/assets/cards/ice.png";
+  if (name.includes("ريح") || name.includes("برق") || name.includes("عاصفة")) return "/assets/cards/wind.png";
+  if (name.includes("ظلال") || name.includes("ليل") || name.includes("غابة") || name.includes("ظلام")) return "/assets/cards/shadow.png";
+  if (name.includes("نور") || name.includes("ملاك") || name.includes("شفاء")) return "/assets/cards/light.png";
+  if (name.includes("بحر") || name.includes("ماء") || name.includes("بحيرة") || name.includes("طوفان")) return "/assets/cards/sea.png";
+  
+  if (card.type === "Spell") return "/assets/cards/light.png";
+  if (card.type === "Trap") return "/assets/cards/shadow.png";
+  return "/assets/cards/fire.png"; // default
+};
+
 function GameBoard() {
   const navigate = useNavigate();
   const {
@@ -292,15 +307,17 @@ function GameBoard() {
       {detailCard && (
         <div className="card-detail-overlay" onClick={() => setDetailCard(null)}>
           <div className="card-detail-modal" onClick={e => e.stopPropagation()}>
-            <div className={`detail-card-visual type-${detailCard.type.toLowerCase()}`}>
-              <h3>{detailCard.name}</h3>
-              {detailCard.type === 'Monster' && (
-                <div className="detail-stats">
-                  <span>⭐ {detailCard.level}</span>
-                  <span>⚔ {detailCard.atk}</span>
-                  <span>🛡 {detailCard.def}</span>
-                </div>
-              )}
+            <div className={`detail-card-visual type-${detailCard.type.toLowerCase()}`} style={{ backgroundImage: `url(${getCardImage(detailCard)})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+              <div className="detail-card-overlay-text">
+                <h3>{detailCard.name}</h3>
+                {detailCard.type === 'Monster' && (
+                  <div className="detail-stats">
+                    <span>⭐ {detailCard.level}</span>
+                    <span>⚔ {detailCard.atk}</span>
+                    <span>🛡 {detailCard.def}</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="detail-info">
               <div className="detail-type">{detailCard.type === 'Monster' ? 'وحش' : detailCard.type === 'Spell' ? 'سحر' : 'فخ'}</div>
@@ -557,43 +574,47 @@ function GameBoard() {
 
 function MonsterHandCard({ card, selected, disabled, onClick }) {
   const isMonster = card.type === 'Monster';
+  const imgUrl = getCardImage(card);
   return (
     <div
       id={`hand-card-${card.id}`}
       className={`monster-card ${selected ? 'selected' : ''} type-${card.type.toLowerCase()}`}
       style={{
-        background: isMonster 
-          ? `linear-gradient(160deg, #8b4513dd 0%, #a0522ddd 60%, #0a0a20 100%)`
-          : card.type === 'Spell' 
-            ? `linear-gradient(160deg, #1a472add 0%, #2e8b57dd 60%, #0a0a20 100%)`
-            : `linear-gradient(160deg, #601021dd 0%, #8b0000dd 60%, #0a0a20 100%)`,
+        backgroundImage: `url(${imgUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         opacity: disabled && !selected ? 0.6 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
       }}
       onClick={disabled ? undefined : onClick}
     >
-      <div className="card-name-label">{card.name}</div>
-      {isMonster ? (
-        <>
-          <div className="card-level-stars">{'⭐'.repeat(card.level)}</div>
-          <div className="card-stats-row">
-            <span>⚔ {card.atk}</span>
-            <span>🛡 {card.def}</span>
-          </div>
-        </>
-      ) : (
-        <div className="card-type-label">{card.type === 'Spell' ? 'سحر' : 'فخ'}</div>
-      )}
+      <div className="card-content-overlay">
+        <div className="card-name-label">{card.name}</div>
+        {isMonster ? (
+          <>
+            <div className="card-level-stars">{'⭐'.repeat(card.level)}</div>
+            <div className="card-stats-row">
+              <span>⚔ {card.atk}</span>
+              <span>🛡 {card.def}</span>
+            </div>
+          </>
+        ) : (
+          <div className="card-type-label">{card.type === 'Spell' ? 'سحر' : 'فخ'}</div>
+        )}
+      </div>
     </div>
   );
 }
 
 function FieldMonsterCard({ monster, isOpponent, canAttack, isSelected, onShowDetail }) {
+  const imgUrl = getCardImage(monster);
   return (
     <div
       className={`field-monster ${canAttack ? 'can-attack' : ''} ${monster.justSummoned ? 'just-summoned' : ''} ${isSelected ? 'selectable-target' : ''}`}
       style={{
-        background: `linear-gradient(160deg, #8b4513dd 0%, #a0522ddd 60%, #0a0a20 100%)`,
+        backgroundImage: `url(${imgUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         border: `2px solid ${isSelected ? '#ff4040' : '#8b4513'}`,
         width: 80,
         height: 100,
@@ -605,13 +626,15 @@ function FieldMonsterCard({ monster, isOpponent, canAttack, isSelected, onShowDe
         }
       }}
     >
-      {monster.justSummoned && <div className="just-summoned-badge">جديد</div>}
-      <div className="card-name-label" style={{ fontSize: '0.65rem' }}>{monster.name}</div>
-      <div className="card-stats-row" style={{ fontSize: '0.65rem', justifyContent: 'center', gap: '4px' }}>
-        <span>⚔ {monster.atk}</span>
-        <span>🛡 {monster.def}</span>
+      <div className="card-content-overlay">
+        {monster.justSummoned && <div className="just-summoned-badge">جديد</div>}
+        <div className="card-name-label" style={{ fontSize: '0.65rem' }}>{monster.name}</div>
+        <div className="card-stats-row" style={{ fontSize: '0.65rem', justifyContent: 'center', gap: '4px' }}>
+          <span>⚔ {monster.atk}</span>
+          <span>🛡 {monster.def}</span>
+        </div>
+        <div className="card-level-stars" style={{ fontSize: '0.6rem' }}>{'⭐'.repeat(monster.level)}</div>
       </div>
-      <div className="card-level-stars" style={{ fontSize: '0.6rem' }}>{'⭐'.repeat(monster.level)}</div>
     </div>
   );
 }
